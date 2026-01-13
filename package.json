@@ -9,7 +9,8 @@
         "dev": "node tools/setup_env.js && concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:python\"",
         "build": "chmod +x render-build.sh && ./render-build.sh",
         "build:prod": "chmod +x render-build.sh && ./render-build.sh",
-        "convex:deploy": "convex deploy"
+        "convex:deploy": "convex deploy",
+        "start": "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
     },
     "dependencies": {
         "convex": "^1.11.0",
