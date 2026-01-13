@@ -133,13 +133,16 @@ onMounted(loadBackups)
 <style scoped>
 .backup-page {
   max-width: 600px;
+  width: 100%;
   margin: 0 auto;
+  padding-bottom: 40px;
+  overflow-x: hidden;
 }
 
 .backup-main {
   text-align: center;
   padding: 40px 24px;
-  margin-bottom: 32px;
+  margin: 0 16px 32px 16px; /* Add margins to prevent touching edges */
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -376,7 +376,7 @@ async def health_check_api():
 # Authentication Endpoints
 # ================================
 
-@app.post("/auth/login")
+@app.post("/api/auth/login")
 async def login(username: str = Form(...), password: str = Form(...)):
     """تسجيل الدخول"""
     users = load_users()
@@ -404,7 +404,7 @@ async def login(username: str = Form(...), password: str = Form(...)):
         }
     }
 
-@app.post("/auth/logout")
+@app.post("/api/auth/logout")
 async def logout(session: dict = Depends(get_current_user)):
     """تسجيل الخروج"""
     # حذف الجلسة
@@ -414,7 +414,7 @@ async def logout(session: dict = Depends(get_current_user)):
     
     return {"message": "تم تسجيل الخروج بنجاح"}
 
-@app.get("/auth/me")
+@app.get("/api/auth/me")
 async def get_me(session: dict = Depends(get_current_user)):
     """الحصول على معلومات المستخدم الحالي"""
     users = load_users()
@@ -431,7 +431,7 @@ async def get_me(session: dict = Depends(get_current_user)):
         "permissions": ROLES[user["role"]]["permissions"]
     }
 
-@app.get("/auth/roles")
+@app.get("/api/auth/roles")
 async def get_roles():
     """الحصول على الأدوار المتاحة"""
     return ROLES
@@ -440,7 +440,7 @@ async def get_roles():
 # User Management (Admin Only)
 # ================================
 
-@app.get("/users")
+@app.get("/api/users")
 async def list_users(session: dict = Depends(require_permission("backup"))):
     """قائمة المستخدمين (للمدير فقط)"""
     users = load_users()
@@ -455,7 +455,7 @@ async def list_users(session: dict = Depends(require_permission("backup"))):
         for u in users.values()
     ]
 
-@app.post("/users")
+@app.post("/api/users")
 async def create_user(
     username: str = Form(...),
     password: str = Form(...),
@@ -492,7 +492,7 @@ async def create_user(
         }
     }
 
-@app.delete("/users/{username}")
+@app.delete("/api/users/{username}")
 async def delete_user(
     username: str,
     session: dict = Depends(require_permission("backup"))
@@ -511,7 +511,7 @@ async def delete_user(
     
     return {"message": "تم حذف المستخدم بنجاح"}
 
-@app.get("/products")
+@app.get("/api/products")
 async def get_products(
     search: str = None,
     car_name: str = None,
@@ -569,7 +569,7 @@ async def get_products(
     
     return products
 
-@app.get("/stats")
+@app.get("/api/stats")
 async def get_statistics(session: dict = Depends(get_current_user)):
     """إحصائيات شاملة للوحة التحكم"""
     cache = load_cache()
@@ -639,7 +639,7 @@ async def get_statistics(session: dict = Depends(get_current_user)):
         ]
     }
 
-@app.post("/products")
+@app.post("/api/products")
 async def create_product(
     product_number: str = Form(...),
     product_name: str = Form(...),
@@ -707,7 +707,7 @@ async def get_image(image_id: str):
     
     raise HTTPException(status_code=404, detail="الصورة غير موجودة")
 
-@app.patch("/products/{product_number}")
+@app.patch("/api/products/{product_number}")
 async def update_product(
     product_number: str,
     product_name: str = Form(None),
@@ -763,7 +763,7 @@ async def update_product(
     
     return product
 
-@app.patch("/products/{product_number}/status")
+@app.patch("/api/products/{product_number}/status")
 async def update_product_status(
     product_number: str, 
     action: str
@@ -810,7 +810,7 @@ async def update_product_status(
             
     return product
 
-@app.delete("/products/{product_number}")
+@app.delete("/api/products/{product_number}")
 async def delete_product(
     product_number: str
 ):
@@ -832,7 +832,7 @@ async def delete_product(
     
     return {"status": "deleted", "product_number": product_number}
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     """فحص الاتصال بالتليجرام و ImgBB"""
     
@@ -1011,7 +1011,7 @@ async def auto_backup_scheduler():
             print(f"Scheduler Error: {e}")
             await asyncio.sleep(3600)
 
-@app.post("/backup/manual")
+@app.post("/api/backup/manual")
 async def create_manual_backup():
     """إنشاء نسخة احتياطية يدوية"""
     filepath = create_backup("manual")
@@ -1026,7 +1026,7 @@ async def create_manual_backup():
     else:
         raise HTTPException(status_code=500, detail="فشل إنشاء النسخة الاحتياطية")
 
-@app.get("/backups/list")
+@app.get("/api/backups/list")
 async def list_backups():
     """عرض قائمة النسخ الاحتياطية"""
     try:
@@ -1055,7 +1055,7 @@ async def list_backups():
 # Smart Backup & Restore System
 # ================================
 
-@app.get("/export")
+@app.get("/api/export")
 async def export_data(session: dict = Depends(require_permission("export"))):
     """تصدير جميع البيانات (نسخة احتياطية ذكية ومرتبة)"""
     cache = load_cache()
@@ -1097,7 +1097,7 @@ async def export_data(session: dict = Depends(require_permission("export"))):
         }
     )
 
-@app.post("/import")
+@app.post("/api/import")
 async def import_data(
     file: UploadFile = File(...),
     session: dict = Depends(require_permission("import"))
@@ -1167,7 +1167,7 @@ async def import_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"خطأ في الاستيراد: {str(e)}")
 
-@app.post("/backup/manual")
+@app.post("/api/backup/manual")
 async def create_manual_backup_v2(session: dict = Depends(require_permission("backup"))):
     """إنشاء نسخة احتياطية يدوية"""
     filepath = create_backup("manual")
@@ -1182,7 +1182,7 @@ async def create_manual_backup_v2(session: dict = Depends(require_permission("ba
     else:
         raise HTTPException(status_code=500, detail="فشل إنشاء النسخة الاحتياطية")
 
-@app.get("/backups/list")
+@app.get("/api/backups/list")
 async def list_backups():
     """عرض قائمة النسخ الاحتياطية"""
     try:
@@ -1245,7 +1245,7 @@ async def sync_from_telegram():
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"خطأ في المزامنة: {str(e)}")
 
-@app.get("/backup-status")
+@app.get("/api/backup-status")
 async def backup_status():
     """حالة النسخ الاحتياطي"""
     cache = load_cache()
