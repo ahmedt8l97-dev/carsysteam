@@ -16,6 +16,8 @@ pip install -r requirements.txt
 cd ..
 
 # --- 3. Deploy Convex Backend ---
+echo "Installing root dependencies for Convex..."
+npm install
 echo "Deploying Convex schema and functions..."
 npx convex deploy
 
