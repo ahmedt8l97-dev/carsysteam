@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const envLocalPath = path.join(__dirname, '..', '.env.local');
+const envLocalPath = path.join(__dirname, '..', '.env');
 const envPath = path.join(__dirname, '..', 'web-frontend', '.env');
 
 try {
@@ -23,10 +23,10 @@ try {
             fs.writeFileSync(envPath, viteEnvContent);
             console.log(`Success: Wrote VITE_CONVEX_URL to .env: ${convexUrl}`);
         } else {
-            console.log("Error: CONVEX_URL not found in .env.local");
+            console.log("Error: CONVEX_URL not found in .env");
         }
     } else {
-        console.log("Error: .env.local not found. Make sure 'npx convex dev' has run.");
+        console.log("Error: .env not found at root.");
     }
 } catch (e) {
     console.error("Error setting up env:", e);

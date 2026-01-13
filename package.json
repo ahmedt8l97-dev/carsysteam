@@ -7,7 +7,8 @@
         "dev:frontend": "npm run dev --prefix web-frontend",
         "dev:python": "cd backend && uvicorn main:app --reload --port 8000",
         "dev": "node tools/setup_env.js && concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:python\"",
-        "build": "vite build && npx convex deploy"
+        "build": "vite build && npx convex deploy",
+        "build:prod": "chmod +x render-build.sh && ./render-build.sh"
     },
     "dependencies": {
         "convex": "^1.11.0",

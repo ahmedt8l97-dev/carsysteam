@@ -5,7 +5,8 @@ Car Stock Management System - Hybrid Cloud Storage
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, BackgroundTasks, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, StreamingResponse, RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import httpx
 import json
@@ -20,12 +21,18 @@ from pathlib import Path
 import hashlib
 import secrets
 
-load_dotenv()
+# Load .env from project root
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 app = FastAPI(title="Car Stock - Hybrid Cloud", version="5.0.0")
-
 security = HTTPBearer()
 
+# Mount Static Files from Vue Build
+# Path: ../web-frontend/dist
+dist_path = Path(__file__).parent.parent / "web-frontend" / "dist"
+
+# Add CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,6 +40,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# API routes stay same...
 
 # Telegram Config
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
@@ -1265,6 +1274,16 @@ async def backup_status():
         "telegram_configured": bool(BOT_TOKEN and CHAT_ID)
     }
 
+# Serving Production Frontend
+if dist_path.exists():
+    app.mount("/", StaticFiles(directory=str(dist_path), html=True), name="static")
+
+    @app.exception_handler(404)
+    async def not_found_exception_handler(request, exc):
+        # Serve index.html for all 404s to handle Vue Router history mode
+        return FileResponse(dist_path / "index.html")
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
