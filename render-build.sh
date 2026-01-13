@@ -15,4 +15,8 @@ cd backend
 pip install -r requirements.txt
 cd ..
 
+# --- 3. Deploy Convex Backend ---
+echo "Deploying Convex schema and functions..."
+npx convex deploy
+
 echo "Build complete!"
