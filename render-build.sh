@@ -2,23 +2,33 @@
 # exit on error
 set -o errexit
 
-# --- 1. Build Vue Frontend ---
+# Check for required environment variables
+if [ -z "$CONVEX_DEPLOY_KEY" ]; then
+  echo "ERROR: CONVEX_DEPLOY_KEY is not set. Please add it to Render Environment Variables."
+  echo "You can find it in Convex dashboard > Settings > Deployment Key."
+  exit 1
+fi
+
+# --- 1. Install Root Dependencies ---
+echo "Installing root dependencies..."
+npm install
+chmod -R +x node_modules/.bin || true
+
+# --- 2. Build Vue Frontend ---
 echo "Building Vue Frontend..."
 cd web-frontend
 npm install
 npm run build
 cd ..
 
-# --- 2. Setup Python Backend ---
+# --- 3. Setup Python Backend ---
 echo "Installing Python dependencies..."
 cd backend
 pip install -r requirements.txt
 cd ..
 
-# --- 3. Deploy Convex Backend ---
-echo "Installing root dependencies for Convex..."
-npm install
+# --- 4. Deploy Convex Backend ---
 echo "Deploying Convex schema and functions..."
-npx convex deploy
+npm run convex:deploy
 
 echo "Build complete!"
