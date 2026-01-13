@@ -58,8 +58,9 @@ async function handleSignup() {
        photoUrl = storageId
     }
 
+    const { password, photo, ...otherData } = signupData.value;
     await convex.mutation(api.users.createUser, {
-      ...signupData.value,
+      ...otherData,
       passwordHash,
       role: 'employee',
       photo: photoUrl
