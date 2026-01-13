@@ -364,15 +364,12 @@ async def delete_from_telegram(message_id: int):
 # API Endpoints
 # ================================
 
-@app.get("/")
-async def root():
+@app.get("/api/health")
+async def health_check_api():
     return {
-        "app": "Car Stock Management",
-        "storage": "Hybrid Cloud (Telegram + ImgBB)",
+        "status": "online",
         "version": "5.0.0",
-        "telegram_configured": bool(BOT_TOKEN and CHAT_ID),
-        "imgbb_configured": bool(IMGBB_API_KEY and IMGBB_API_KEY != "ضع_مفتاح_imgbb_هنا"),
-        "auth_enabled": True
+        "telegram": bool(BOT_TOKEN and CHAT_ID)
     }
 
 # ================================
@@ -1276,12 +1273,21 @@ async def backup_status():
 
 # Serving Production Frontend
 if dist_path.exists():
+    print(f"Frontend dist found at: {dist_path}")
     app.mount("/", StaticFiles(directory=str(dist_path), html=True), name="static")
 
     @app.exception_handler(404)
     async def not_found_exception_handler(request, exc):
         # Serve index.html for all 404s to handle Vue Router history mode
         return FileResponse(dist_path / "index.html")
+else:
+    print(f"WARNING: Frontend dist NOT found at: {dist_path}")
+    @app.get("/")
+    async def root_fallback():
+        return {
+            "message": "Backend is running, but Frontend build (dist) is missing.",
+            "path_searched": str(dist_path)
+        }
 
 if __name__ == "__main__":
     import uvicorn

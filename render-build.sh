@@ -16,6 +16,7 @@ chmod -R +x node_modules/.bin || true
 
 # --- 2. Build Vue Frontend ---
 echo "Building Vue Frontend..."
+cp .env web-frontend/.env || true
 cd web-frontend
 npm install
 npm run build
