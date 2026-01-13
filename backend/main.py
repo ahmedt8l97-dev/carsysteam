@@ -284,8 +284,8 @@ async def upload_image_to_imgbb(image_content: bytes) -> str:
 # Telegram Operations
 # ================================
 
-async def send_to_telegram(product: dict, image_url: str = None):
-    """إرسال المنتج للتليجرام وإرجاع message_id"""
+async def send_to_telegram(product: dict, image_url: str = None, message_id: int = None):
+    """إرسال المنتج للتليجرام أو تحديثه وإرجاع message_id"""
     
     caption = f"""
 🔧 <b>{product['product_name']}</b>
@@ -295,9 +295,10 @@ async def send_to_telegram(product: dict, image_url: str = None):
 🏷️ الرقم: <code>{product['product_number']}</code>
 📂 النوع: {product['type']}
 📦 الكمية: <b>{product['quantity']}</b>
+📊 الحالة: <b>{product.get('status', 'غير محدد')}</b>
 ━━━━━━━━━━━━━━━━
-💰 السعر: <b>{product['price_iqd']:,.0f} IQD</b>
-📦 الجملة: <b>{product['wholesale_price_iqd']:,.0f} IQD</b>
+💰 السعر: <b>{float(product['price_iqd']):,.0f} IQD</b>
+📦 الجملة: <b>{float(product['wholesale_price_iqd']):,.0f} IQD</b>
 ━━━━━━━━━━━━━━━━
 📅 {datetime.now().strftime('%Y-%m-%d %H:%M')}
 """
@@ -307,20 +308,37 @@ async def send_to_telegram(product: dict, image_url: str = None):
 
     async with httpx.AsyncClient(timeout=60) as client:
         try:
-            resp = await client.post(
-                f"{TG_URL}/sendMessage",
-                json={"chat_id": CHAT_ID, "text": caption, "parse_mode": "HTML"}
-            )
+            if message_id:
+                # تحديث رسالة موجودة
+                resp = await client.post(
+                    f"{TG_URL}/editMessageText",
+                    json={
+                        "chat_id": CHAT_ID,
+                        "message_id": message_id,
+                        "text": caption,
+                        "parse_mode": "HTML"
+                    }
+                )
+            else:
+                # إرسال رسالة جديدة
+                resp = await client.post(
+                    f"{TG_URL}/sendMessage",
+                    json={"chat_id": CHAT_ID, "text": caption, "parse_mode": "HTML"}
+                )
             
             if resp.status_code == 200:
                 result = resp.json()["result"]
-                msg_id = result["message_id"]
-                return msg_id
+                # In editMessageText, result is the Message object or True
+                return message_id if message_id else result["message_id"]
             else:
+                # If editing failed (message deleted?), send new
+                if message_id:
+                    return await send_to_telegram(product, image_url)
                 raise Exception(f"Telegram API Error: {resp.text}")
                 
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"فشل الإرسال للتليجرام: {str(e)}")
+            print(f"Telegram Error: {e}")
+            return None
 
 async def delete_from_telegram(message_id: int):
     """حذف رسالة من التليجرام"""
@@ -777,12 +795,12 @@ async def update_product_status(
     update_product_in_db(product_number, product)
     
     # Update on Telegram
-    if product.get("message_id"):
+    msg_id = product.get("message_id")
+    if msg_id:
         try:
-            # We recreate the full product object to be sure
-            await send_to_telegram(product, product.get("image"))
-        except:
-            pass
+            await send_to_telegram(product, product.get("image"), message_id=msg_id)
+        except Exception as e:
+            print(f"Telegram Update Error: {e}")
             
     return product
 
@@ -873,12 +891,27 @@ def create_backup(backup_type: str = "manual"):
             backup_data["statistics"]["products_by_type"][ptype] = \
                 backup_data["statistics"]["products_by_type"].get(ptype, 0) + 1
         
-        # حفظ النسخة الاحتياطية
+        # حفظ النسخة الاحتياطية محلياً
         filename = f"backup_{backup_type}_{timestamp}.json"
         filepath = os.path.join(BACKUP_DIR, filename)
         
+        json_content = json.dumps(backup_data, indent=2, ensure_ascii=False, sort_keys=True)
         with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(backup_data, f, indent=2, ensure_ascii=False, sort_keys=True)
+            f.write(json_content)
+        
+        # حفظ النسخة في Convex (Cloud)
+        if convex_client:
+            try:
+                convex_client.mutation("backups:createBackup", {
+                    "filename": filename,
+                    "data": json_content,
+                    "total_products": len(cache),
+                    "type": backup_type
+                })
+                # الحفاظ على آخر 20 نسخة فقط لتوفير المساحة
+                convex_client.mutation("backups:deleteOldBackups", {"keepCount": 20})
+            except Exception as ex:
+                print(f"Cloud Backup Error: {ex}")
         
         # إرسال للتليجرام
         if BOT_TOKEN and CHAT_ID:

@@ -10,6 +10,9 @@ import {
   Database
 } from 'lucide-vue-next'
 
+import { convex } from '../lib/convex'
+import { api } from '../../../convex/_generated/api'
+
 const backups = ref([])
 const loading = ref(false)
 const manualLoading = ref(false)
@@ -18,10 +21,8 @@ const message = ref({ text: '', type: '' })
 async function loadBackups() {
   loading.value = true
   try {
-    const res = await fetch('/api/backups/list')
-    if (res.ok) {
-      backups.value = await res.json()
-    }
+    const data = await convex.query(api.backups.getBackups)
+    backups.value = data
   } catch (e) {
     console.error(e)
   } finally {
@@ -51,6 +52,18 @@ async function triggerManualBackup() {
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleString('ar-IQ')
+}
+
+function downloadBackup(backup) {
+  const blob = new Blob([backup.data], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = backup.filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 onMounted(loadBackups)
@@ -97,7 +110,7 @@ onMounted(loadBackups)
       </div>
 
       <div v-else class="backup-list">
-        <div v-for="b in backups" :key="b.filename" class="backup-item card">
+        <div v-for="b in backups" :key="b._id" class="backup-item card">
           <div class="item-icon">
             <FileJson :size="24" />
           </div>
@@ -105,13 +118,12 @@ onMounted(loadBackups)
             <span class="filename">{{ b.filename }}</span>
             <div class="item-meta">
               <span class="date"><Calendar :size="12" /> {{ formatDate(b.created_at) }}</span>
-              <span class="size">{{ (b.size_bytes / 1024).toFixed(1) }} KB</span>
+              <span class="size">{{ b.total_products }} منتج</span>
             </div>
           </div>
-          <div class="item-status">
-            <span class="status-dot"></span>
-            محفوظة
-          </div>
+          <button @click="downloadBackup(b)" class="download-mini-btn" title="تحميل الملف">
+            <Download :size="18" />
+          </button>
         </div>
       </div>
     </div>
@@ -202,17 +214,21 @@ onMounted(loadBackups)
 .item-meta { display: flex; gap: 16px; }
 .item-meta span { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
 
-.item-status {
-  font-size: 11px;
-  color: var(--system-green);
+.download-mini-btn {
+  background: var(--system-tertiary-bg);
+  border: none;
+  color: var(--system-blue);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(48, 209, 88, 0.1);
-  padding: 4px 10px;
-  border-radius: 20px;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
-.status-dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; }
+
+.download-mini-btn:active { opacity: 0.6; }
 
 .empty-backups { text-align: center; color: var(--text-secondary); padding: 40px; font-size: 14px; }
 

@@ -30,4 +30,12 @@ export default defineSchema({
         .index("by_product_number", ["product_number"])
         .index("by_type", ["type"])
         .index("by_car", ["car_name"]),
+
+    backups: defineTable({
+        filename: v.string(),
+        data: v.string(), // JSON string of the backup
+        created_at: v.string(),
+        total_products: v.number(),
+        type: v.string(), // manual, daily, weekly
+    }).index("by_created_at", ["created_at"]),
 });

@@ -1,0 +1,35 @@
+{
+  "backup_info": {
+    "backup_date": "2026-01-13T20:43:54.063856",
+    "backup_type": "manual",
+    "created_by": "Auto Backup System",
+    "total_products": 1,
+    "version": "5.0.0"
+  },
+  "products": {
+    "ewrr": {
+      "_creationTime": 1768325802071.9558,
+      "_id": "j573qatr4wek8eaxcfxh2cwbbn7z5xh4",
+      "car_name": "ewr",
+      "imageUrl": null,
+      "last_update": "2026-01-13T20:36:42.478184",
+      "message_id": 850.0,
+      "model_number": "",
+      "original_quantity": 2.0,
+      "price_iqd": 10.0,
+      "product_name": "re",
+      "product_number": "ewrr",
+      "quantity": 2.0,
+      "status": "متوفر",
+      "type": "fdfd",
+      "wholesale_price_iqd": 2.0
+    }
+  },
+  "statistics": {
+    "products_by_type": {
+      "fdfd": 1
+    },
+    "total_value": 10.0,
+    "total_wholesale_value": 2.0
+  }
+}

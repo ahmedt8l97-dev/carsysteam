@@ -38,7 +38,7 @@ function handleSearch() {
 
 async function updateStatus(productNumber, action) {
   try {
-    const res = await fetch(`/api/products/${productNumber}/status?action=${action}`, {
+    const res = await fetch(`/api/products/${encodeURIComponent(productNumber)}/status?action=${action}`, {
       method: 'PATCH',
     })
     if (!res.ok) throw new Error('Update failed')
@@ -51,7 +51,7 @@ async function updateStatus(productNumber, action) {
 async function removeProduct(productNumber) {
   if (!confirm('حذف المنتج من المخزون والتليجرام؟')) return
   try {
-    const res = await fetch(`/api/products/${productNumber}`, {
+    const res = await fetch(`/api/products/${encodeURIComponent(productNumber)}`, {
       method: 'DELETE'
     })
     
