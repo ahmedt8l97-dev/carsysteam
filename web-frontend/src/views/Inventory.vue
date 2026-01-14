@@ -5,9 +5,6 @@ import { api } from '../../../convex/_generated/api'
 import { 
   RefreshCw, 
   Trash2, 
-  Check,
-  CheckCheck,
-  Ban,
   ImageIcon,
   X
 } from 'lucide-vue-next'
@@ -15,8 +12,19 @@ import {
 const products = ref([])
 const loading = ref(true)
 const searchQuery = ref('')
-const selectedProduct = ref(null)
-let searchTimeout = null
+const editingId = ref(null)
+const editLoading = ref(false)
+const editImageFile = ref(null)
+const editForm = ref({
+  product_number: '',
+  product_name: '',
+  car_name: '',
+  model_number: '',
+  type: '',
+  quantity: 0,
+  price_iqd: 0,
+  wholesale_price_iqd: 0
+})
 
 async function load() {
   loading.value = true
@@ -29,11 +37,65 @@ async function load() {
   }
 }
 
+let searchTimeout = null
 function handleSearch() {
   if (searchTimeout) clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {
     load()
-  }, 500) // Debounce 500ms
+  }, 500)
+}
+
+function startEditing(p) {
+  editingId.value = p._id
+  editImageFile.value = null
+  editForm.value = {
+    product_number: p.product_number,
+    product_name: p.product_name,
+    car_name: p.car_name,
+    model_number: p.model_number || '',
+    type: p.type || '',
+    quantity: p.quantity,
+    price_iqd: p.price_iqd,
+    wholesale_price_iqd: p.wholesale_price_iqd
+  }
+}
+
+function cancelEdit() {
+  editingId.value = null
+}
+
+async function saveEdit() {
+  editLoading.value = true
+  const p = products.value.find(item => item._id === editingId.value)
+  try {
+    const formData = new FormData()
+    formData.append('product_name', editForm.value.product_name)
+    formData.append('car_name', editForm.value.car_name)
+    formData.append('model_number', editForm.value.model_number)
+    formData.append('product_type', editForm.value.type)
+    formData.append('quantity', editForm.value.quantity)
+    formData.append('price_iqd', editForm.value.price_iqd)
+    formData.append('wholesale_price_iqd', editForm.value.wholesale_price_iqd)
+    
+    // Add image if selected
+    if (editImageFile.value) {
+      formData.append('image', editImageFile.value)
+    }
+
+    const res = await fetch(`/api/products/${encodeURIComponent(p.product_number)}`, {
+      method: 'PATCH',
+      body: formData
+    })
+    
+    if (!res.ok) throw new Error('فشل التحديث')
+    
+    await load()
+    editingId.value = null
+  } catch (e) {
+    alert(e.message)
+  } finally {
+    editLoading.value = false
+  }
 }
 
 async function updateStatus(productNumber, action) {
@@ -54,14 +116,8 @@ async function removeProduct(productNumber) {
     const res = await fetch(`/api/products/${encodeURIComponent(productNumber)}`, {
       method: 'DELETE'
     })
-    
-    if (!res.ok) {
-      const err = await res.json()
-      throw new Error(err.detail || 'فشل الحذف')
-    }
-    
+    if (!res.ok) throw new Error('فشل الحذف')
     await load()
-    selectedProduct.value = null
   } catch (e) {
     alert('خطأ أثناء الحذف: ' + e.message)
   }
@@ -69,11 +125,9 @@ async function removeProduct(productNumber) {
 
 function formatDate(iso) {
   if (!iso) return 'غير محدد';
-  const date = new Date(iso);
-  return date.toLocaleString('ar-IQ', {
-    year: 'numeric',
-    month: 'short',
+  return new Date(iso).toLocaleString('ar-IQ', {
     day: 'numeric',
+    month: 'short',
     hour: '2-digit',
     minute: '2-digit'
   });
@@ -85,7 +139,7 @@ onMounted(load)
 <template>
   <div class="inventory-page">
     <header class="ios-header">
-      <h1>المخزون</h1>
+      <h1>التوفر والمخزون</h1>
       <button @click="load" class="refresh-circular">
         <RefreshCw :class="{ 'spinning': loading }" :size="18" />
       </button>
@@ -106,90 +160,114 @@ onMounted(load)
       <RefreshCw class="spinning" />
     </div>
 
-    <div v-else class="compact-grid">
-      <div v-for="p in products" :key="p._id" class="mini-card card" @click="selectedProduct = p">
-        <div class="mini-card-image">
+    <div v-else class="full-info-grid">
+      <div v-for="p in products" :key="p._id" class="info-card card" :class="{ 'editing-mode': editingId === p._id }">
+        <div class="card-image">
           <img v-if="p.imageUrl" :src="p.imageUrl" :alt="p.product_name">
-          <div v-else class="mini-no-image">
-             <ImageIcon :size="32" :stroke-width="1" />
+          <div v-else class="no-image">
+             <ImageIcon :size="48" :stroke-width="1" />
           </div>
-          <div class="mini-status" :class="p.quantity > 0 ? 'available' : 'out'">
-            {{ p.quantity > 0 ? 'متوفر' : 'نفذ' }}
+          <div class="status-chip" :class="p.quantity > 0 ? 'available' : 'out'">
+            {{ p.quantity > 0 ? 'متوفر' : 'نفذت' }}
           </div>
+          <div class="id-tag">#{{ p.product_number }}</div>
         </div>
 
-        <div class="mini-card-body">
-          <div class="mini-title-row">
-            <h4>{{ p.product_name }}</h4>
-            <span class="mini-price">{{ p.price_iqd.toLocaleString() }}</span>
-          </div>
-          <div class="mini-subtitle">{{ p.car_name }} • {{ p.quantity }}</div>
+        <div class="card-content">
+          <template v-if="editingId !== p._id">
+            <div class="main-details">
+              <h4 class="product-name">{{ p.product_name }}</h4>
+              <p class="car-type">{{ p.car_name }}</p>
+            </div>
 
-          <div class="mini-actions" @click.stop>
-            <button @click="updateStatus(p.product_number, 'sold_one')" class="m-btn sold" title="بيع قطعة">
-              <Check :size="16" />
-            </button>
-            <button @click="updateStatus(p.product_number, 'sold_all')" class="m-btn sold-all" title="بيع الكل">
-              <CheckCheck :size="16" />
-            </button>
-            <button @click="updateStatus(p.product_number, 'out_of_stock')" class="m-btn out" title="نفد">
-              <Ban :size="16" />
-            </button>
-            <button @click="removeProduct(p.product_number)" class="m-btn delete" title="حذف">
-              <Trash2 :size="16" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            <div class="specs-grid">
+              <div class="spec-item">
+                <span class="s-label">رقم المنتج</span>
+                <span class="s-value id-code">#{{ p.product_number }}</span>
+              </div>
+              <div class="spec-item">
+                <span class="s-label">الكمية</span>
+                <span class="s-value qty">{{ p.quantity }} قطع</span>
+              </div>
+              <div class="spec-item">
+                <span class="s-label">سعر البيع</span>
+                <span class="s-value price">{{ p.price_iqd.toLocaleString() }} <small>د.ع</small></span>
+              </div>
+              <div class="spec-item">
+                <span class="s-label">سعر الجملة</span>
+                <span class="s-value wholesale">{{ p.wholesale_price_iqd.toLocaleString() }} <small>د.ع</small></span>
+              </div>
+              <div class="spec-item full-width">
+                <span class="s-label">آخر تحديث</span>
+                <span class="s-value date">{{ formatDate(p.last_update) }}</span>
+              </div>
+            </div>
 
-    <!-- Product Detail Modal -->
-    <div v-if="selectedProduct" class="ios-modal-overlay" @click="selectedProduct = null">
-      <div class="ios-modal card" @click.stop>
-        <div class="modal-header">
-           <h2>تفاصيل المنتج</h2>
-           <button @click="selectedProduct = null" class="close-btn"><X :size="20" /></button>
-        </div>
-        
-        <div class="modal-body">
-           <img v-if="selectedProduct.imageUrl" :src="selectedProduct.imageUrl" class="modal-img">
-           
-           <div class="detail-list">
-              <div class="detail-item">
-                <span class="label">اسم المنتج</span>
-                <span class="value">{{ selectedProduct.product_name }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">السيارة</span>
-                <span class="value">{{ selectedProduct.car_name }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">رقم القطعة</span>
-                <span class="value">{{ selectedProduct.product_number }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">السعر</span>
-                <span class="value price">{{ selectedProduct.price_iqd.toLocaleString() }} IQD</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">سعر الجملة</span>
-                <span class="value">{{ selectedProduct.wholesale_price_iqd.toLocaleString() }} IQD</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">الكمية الحالية</span>
-                <span class="value">{{ selectedProduct.quantity }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">تاريخ الإضافة</span>
-                <span class="value">{{ formatDate(selectedProduct.last_update) }}</span>
-              </div>
-           </div>
-        </div>
+            <div class="card-actions">
+              <button @click="updateStatus(p.product_number, 'sold_one')" class="action-link sell">بيع قطعة</button>
+              <button @click="updateStatus(p.product_number, 'sold_all')" class="action-link sell-all">بيع الكل</button>
+              <button @click="startEditing(p)" class="action-link edit">تعديل</button>
+              <button @click="removeProduct(p.product_number)" class="action-link delete">حذف</button>
+            </div>
+          </template>
 
-        <div class="modal-footer">
-           <button @click="removeProduct(selectedProduct.product_number)" class="delete-full-btn">
-             <Trash2 :size="18" /> حذف المنتج من كل مكان
-           </button>
+          <template v-else>
+            <div class="edit-form">
+              <div class="edit-field-group">
+                <label class="edit-label">رقم المنتج</label>
+                <input v-model="editForm.product_number" class="edit-input" placeholder="رقم المنتج" disabled>
+              </div>
+              
+              <div class="edit-field-group">
+                <label class="edit-label">اسم المنتج</label>
+                <input v-model="editForm.product_name" class="edit-input" placeholder="اسم المنتج">
+              </div>
+              
+              <div class="edit-row">
+                <div class="edit-field-group">
+                  <label class="edit-label">السيارة</label>
+                  <input v-model="editForm.car_name" class="edit-input" placeholder="السيارة">
+                </div>
+                <div class="edit-field-group">
+                  <label class="edit-label">الموديل</label>
+                  <input v-model="editForm.model_number" class="edit-input" placeholder="الموديل">
+                </div>
+              </div>
+              
+              <div class="edit-field-group">
+                <label class="edit-label">النوع</label>
+                <input v-model="editForm.type" class="edit-input" placeholder="مثلاً: كهربائيات">
+              </div>
+              
+              <div class="edit-row">
+                <div class="edit-field-group">
+                  <label class="edit-label">الكمية</label>
+                  <input v-model.number="editForm.quantity" type="number" class="edit-input" placeholder="الكمية">
+                </div>
+                <div class="edit-field-group">
+                  <label class="edit-label">سعر البيع</label>
+                  <input v-model.number="editForm.price_iqd" type="number" class="edit-input" placeholder="بيع">
+                </div>
+              </div>
+              
+              <div class="edit-field-group">
+                <label class="edit-label">سعر الجملة</label>
+                <input v-model.number="editForm.wholesale_price_iqd" type="number" class="edit-input" placeholder="جملة">
+              </div>
+              
+              <div class="edit-field-group">
+                <label class="edit-label">تغيير الصورة (اختياري)</label>
+                <input type="file" @change="e => editImageFile = e.target.files[0]" accept="image/*" class="edit-file-input">
+              </div>
+              
+              <div class="edit-actions">
+                <button @click="saveEdit" class="save-btn" :disabled="editLoading">
+                  {{ editLoading ? 'جاري الحفظ...' : 'حفظ التعديلات' }}
+                </button>
+                <button @click="cancelEdit" class="cancel-btn">إلغاء</button>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -197,76 +275,38 @@ onMounted(load)
 </template>
 
 <style scoped>
-.ios-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.refresh-circular {
-  background: var(--system-secondary-bg);
-  border: none;
-  color: var(--system-blue);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.search-section {
-  margin-bottom: 20px;
-}
-
-.search-bar input {
-  width: 100%;
-  background: var(--system-secondary-bg);
-  border: 0.5px solid var(--border);
-  padding: 12px 16px;
-  border-radius: 12px;
-  color: white;
-  font-size: 15px;
-  outline: none;
-}
-
-.search-bar input:focus {
-  border-color: var(--system-blue);
-}
-
-.spinning { animation: spin 1s linear infinite; }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-/* Smaller Cards Grid */
-.compact-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
-  gap: 12px;
-}
-
-.mini-card {
-  padding: 0 !important;
-  overflow: hidden;
+.full-info-grid {
   display: flex;
   flex-direction: column;
-  border: 0.5px solid var(--border);
+  gap: 16px;
+  padding-bottom: 40px;
 }
 
-.mini-card-image {
-  height: 110px;
+.info-card {
+  padding: 0 !important;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  background: var(--system-secondary-bg);
+  border: 1px solid var(--border);
+  min-height: 180px;
+  border-radius: 16px;
+}
+
+.card-image {
+  width: 140px;
   position: relative;
   background: #111;
+  flex-shrink: 0;
 }
 
-.mini-card-image img {
+.card-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.mini-no-image {
+.no-image {
   height: 100%;
   display: flex;
   align-items: center;
@@ -274,172 +314,168 @@ onMounted(load)
   color: #333;
 }
 
-.mini-status {
+.status-chip {
   position: absolute;
-  bottom: 6px;
-  left: 6px;
-  font-size: 9px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: bold;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  font-weight: 700;
 }
-.mini-status.available { background: rgba(48, 209, 88, 0.2); color: #30d158; }
-.mini-status.out { background: rgba(255, 69, 58, 0.2); color: #ff453a; }
+.status-chip.available { color: #30d158; border: 0.5px solid rgba(48, 209, 88, 0.3); }
+.status-chip.out { color: #ff453a; border: 0.5px solid rgba(255, 69, 58, 0.3); }
 
-.mini-card-body {
-  padding: 10px;
+.id-tag {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 10px;
+  color: white;
+  opacity: 0.6;
+  font-family: monospace;
+}
+
+.card-content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-details { margin-bottom: 12px; }
+.product-name { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
+.car-type { margin: 0; color: var(--system-gray); font-size: 14px; }
+
+.specs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+}
+
+.spec-item { display: flex; flex-direction: column; gap: 2px; }
+.s-label { font-size: 11px; color: var(--system-gray); }
+.s-value { font-size: 14px; font-weight: 600; }
+.s-value.price { color: var(--system-blue); }
+.s-value.wholesale { color: var(--system-green); }
+.s-value.qty { color: var(--system-orange); }
+.s-value.id-code { color: var(--system-gray); font-family: monospace; }
+.s-value.date { font-size: 12px; opacity: 0.8; }
+
+.spec-item.full-width {
+  grid-column: span 2;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+.card-actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  gap: 8px;
+}
+
+.action-link {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.action-link.sell { color: var(--system-blue); }
+.action-link.sell-all { color: var(--system-green); }
+.action-link.edit { color: var(--system-orange); }
+.action-link.delete { color: var(--system-red); }
+
+.edit-form { display: flex; flex-direction: column; gap: 12px; }
+
+.edit-field-group {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.mini-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.mini-title-row h4 {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 90px;
-}
-
-.mini-price {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--system-green);
-}
-
-.mini-subtitle {
+.edit-label {
   font-size: 11px;
-  color: var(--system-gray);
-}
-
-.mini-actions {
-  display: flex;
-  gap: 5px;
-  margin-top: 8px;
-  justify-content: space-between;
-}
-
-.m-btn {
-  flex: 1;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  background: var(--system-tertiary-bg);
-  color: var(--text-primary);
-  transition: background 0.2s;
-}
-
-.m-btn:active { opacity: 0.6; }
-
-.m-btn.sold { color: var(--system-blue); }
-.m-btn.sold-all { color: var(--system-green); }
-.m-btn.out { color: var(--system-orange); }
-.m-btn.delete { color: var(--system-red); background: rgba(255, 69, 58, 0.05); }
-
-/* Modal Styles */
-.ios-modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  animation: fadeIn 0.3s ease;
-}
-
-.ios-modal {
-  width: 100%;
-  max-width: 450px;
-  background: var(--system-secondary-bg);
-  border-radius: 20px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
-}
-
-.modal-header {
-  padding: 16px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 0.5px solid var(--border);
-}
-
-.modal-header h2 { font-size: 18px; margin: 0; }
-.close-btn { background: var(--system-tertiary-bg); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-
-.modal-body {
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.modal-img {
-  width: 100%;
-  height: 220px;
-  object-fit: contain;
-  background: #111;
-  border-radius: 12px;
-  margin-bottom: 20px;
-}
-
-.detail-list { display: grid; gap: 10px; }
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px;
-  background: var(--system-tertiary-bg);
-  border-radius: 12px;
-}
-
-.detail-item .label { font-size: 13px; color: var(--system-gray); }
-.detail-item .value { font-weight: 600; font-size: 15px; }
-.detail-item .value.price { color: var(--system-green); }
-
-.modal-footer {
-  padding: 16px 20px;
-  border-top: 0.5px solid var(--border);
-}
-
-.delete-full-btn {
-  width: 100%;
-  padding: 14px;
-  background: rgba(255, 69, 58, 0.1);
-  border: 1px solid var(--system-red);
-  color: var(--system-red);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
   font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.edit-input { background: var(--system-tertiary-bg); border: 1px solid var(--border); padding: 10px 12px; border-radius: 8px; color: white; font-size: 14px; }
+.edit-input:disabled { opacity: 0.5; cursor: not-allowed; }
+.edit-input:focus { outline: none; border-color: var(--system-blue); }
 
-@media (max-width: 400px) {
-  .compact-grid {
-    grid-template-columns: 1fr 1fr; /* 2 cards per row on narrow mobile */
-    gap: 8px;
-  }
-  .mini-card-image { height: 100px; }
+.edit-file-input {
+  background: var(--system-tertiary-bg);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
 }
+
+.edit-file-input::-webkit-file-upload-button {
+  background: var(--system-blue);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.edit-actions { display: flex; gap: 10px; margin-top: 12px; }
+.save-btn { flex: 2; background: var(--system-blue); color: white; border: none; padding: 8px; border-radius: 8px; font-weight: 700; }
+.cancel-btn { flex: 1; background: var(--system-tertiary-bg); color: white; border: none; padding: 8px; border-radius: 8px; }
+
+.editing-mode { border-color: var(--system-blue) !important; box-shadow: 0 0 15px rgba(10, 132, 255, 0.2); }
+
+@media (max-width: 480px) {
+  .info-card { flex-direction: column; }
+  .card-image { width: 100%; height: 160px; }
+}
+
+.ios-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.refresh-circular { background: var(--system-secondary-bg); border: none; color: var(--system-blue); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+.search-section { 
+  margin-bottom: 24px;
+  padding: 0 4px;
+}
+
+.search-bar input { 
+  width: 100%; 
+  background: var(--system-secondary-bg); 
+  border: 0.5px solid var(--border); 
+  padding: 12px 16px; 
+  border-radius: 12px; 
+  color: white; 
+  font-size: 15px; 
+  outline: none;
+  transition: all 0.2s;
+}
+
+.search-bar input:focus { 
+  border-color: var(--system-blue);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.1);
+}
+
+.spinning { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>

@@ -38,7 +38,7 @@ async function triggerManualBackup() {
     const data = await res.json()
     
     if (res.ok) {
-      message.value = { text: 'تم إنشاء النسخة الاحتياطية وإرسالها للتليجرام بنجاح', type: 'success' }
+      message.value = { text: 'تم إنشاء النسخة الاحتياطية بنجاح ✅', type: 'success' }
       await loadBackups()
     } else {
       throw new Error(data.detail || 'فشل الحفظ')
@@ -51,7 +51,12 @@ async function triggerManualBackup() {
 }
 
 function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleString('ar-IQ')
+  return new Date(dateStr).toLocaleString('ar-IQ', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 function downloadBackup(backup) {
@@ -70,60 +75,74 @@ onMounted(loadBackups)
 </script>
 
 <template>
-  <div class="backup-page">
-    <header class="ios-header">
+  <div class="backup-page-mobile">
+    <header class="mobile-header">
       <h1>النسخ الاحتياطي</h1>
+      <p>احمِ بياناتك بضغطة واحدة</p>
     </header>
 
-    <!-- Main Action Card -->
-    <div class="backup-main card">
-      <div class="backup-icon">
-        <Database :size="48" color="var(--system-blue)" />
-      </div>
-      <h2>حماية بياناتك</h2>
-      <p>قم بإنشاء نسخة احتياطية كاملة للمخزون. سيتم حفظ النسخة في السيرفر وإرسال ملف JSON إلى قناة التليجرام الخاصة بك.</p>
-      
-      <div v-if="message.text" :class="['message-pill', message.type]">
-        <CheckCircle2 v-if="message.type === 'success'" :size="18" />
-        <AlertCircle v-else :size="18" />
-        <span>{{ message.text }}</span>
-      </div>
+    <div class="mobile-content">
+      <!-- Main Action Card -->
+      <div class="action-card-mobile card">
+        <div class="icon-badge">
+          <Database :size="28" />
+        </div>
+        
+        <div class="action-text">
+          <h3>إنشاء نسخة احتياطية</h3>
+          <p>حفظ كامل لبيانات المخزون وإرسالها للتليجرام</p>
+        </div>
 
-      <button @click="triggerManualBackup" class="btn-primary backup-btn" :disabled="manualLoading">
-        <CloudDownload v-if="!manualLoading" :size="20" />
-        <span v-if="manualLoading" class="spinner"></span>
-        <span>{{ manualLoading ? 'جاري الحفظ...' : 'إنشاء نسخة فورية الآن' }}</span>
-      </button>
-    </div>
+        <button 
+          @click="triggerManualBackup" 
+          class="btn-backup-mobile"
+          :disabled="manualLoading"
+        >
+          <CloudDownload :size="20" />
+          <span>{{ manualLoading ? 'جاري الحفظ...' : 'نسخ الآن' }}</span>
+        </button>
 
-    <!-- History List -->
-    <div class="history-section">
-      <div class="section-title">
-        <History :size="18" />
-        <h3>السجلات الأخيرة</h3>
-      </div>
-
-      <div v-if="loading" class="loader">جاري التحميل...</div>
-      
-      <div v-else-if="backups.length === 0" class="empty-backups">
-        لا توجد نسخ سابقة متاحة حالياً.
+        <div v-if="message.text" :class="['alert-mobile', message.type]">
+          <CheckCircle2 v-if="message.type === 'success'" :size="14" />
+          <AlertCircle v-else :size="14" />
+          <span>{{ message.text }}</span>
+        </div>
       </div>
 
-      <div v-else class="backup-list">
-        <div v-for="b in backups" :key="b._id" class="backup-item card">
-          <div class="item-icon">
-            <FileJson :size="24" />
-          </div>
-          <div class="item-details">
-            <span class="filename">{{ b.filename }}</span>
-            <div class="item-meta">
-              <span class="date"><Calendar :size="12" /> {{ formatDate(b.created_at) }}</span>
-              <span class="size">{{ b.total_products }} منتج</span>
+      <!-- History Section -->
+      <div class="history-section-mobile">
+        <div class="section-header-mobile">
+          <History :size="18" />
+          <h3>السجل</h3>
+          <span class="count-badge" v-if="backups.length">{{ backups.length }}</span>
+        </div>
+
+        <div v-if="loading" class="loading-mobile">جاري التحميل...</div>
+
+        <div v-else-if="backups.length === 0" class="empty-mobile">
+          <FileJson :size="48" :stroke-width="1" />
+          <p>لا توجد نسخ احتياطية بعد</p>
+        </div>
+
+        <div v-else class="backup-list-mobile">
+          <div 
+            v-for="backup in backups" 
+            :key="backup._id" 
+            class="backup-item-mobile"
+            @click="downloadBackup(backup)"
+          >
+            <div class="item-icon">
+              <FileJson :size="20" />
             </div>
+            <div class="item-info">
+              <span class="item-name">{{ backup.filename }}</span>
+              <span class="item-date">
+                <Calendar :size="12" />
+                {{ formatDate(backup.createdAt) }}
+              </span>
+            </div>
+            <div class="item-badge">{{ backup.productCount }} قطعة</div>
           </div>
-          <button @click="downloadBackup(b)" class="download-mini-btn" title="تحميل الملف">
-            <Download :size="18" />
-          </button>
         </div>
       </div>
     </div>
@@ -131,117 +150,250 @@ onMounted(loadBackups)
 </template>
 
 <style scoped>
-.backup-page {
-  max-width: 600px;
-  width: 100%;
-  margin: 0 auto;
-  padding-bottom: 40px;
-  overflow-x: hidden;
+.backup-page-mobile {
+  padding-bottom: 100px;
+  min-height: 100vh;
 }
 
-.backup-main {
+.mobile-header {
+  padding: 24px 20px;
   text-align: center;
-  padding: 40px 24px;
-  margin: 0 16px 32px 16px; /* Add margins to prevent touching edges */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
+  background: linear-gradient(135deg, rgba(10, 132, 255, 0.1), rgba(48, 209, 88, 0.05));
+  border-bottom: 1px solid var(--border);
 }
 
-.backup-main h2 { margin: 0; font-size: 22px; }
-.backup-main p { color: var(--text-secondary); font-size: 15px; max-width: 400px; }
-
-.backup-btn {
-  width: 100%;
-  max-width: 300px;
-  height: 54px;
-  margin-top: 12px;
+.mobile-header h1 {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 8px;
 }
 
-.message-pill {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  border-radius: 12px;
+.mobile-header p {
   font-size: 14px;
-  font-weight: 500;
-  width: 100%;
+  color: var(--text-secondary);
+  margin: 0;
 }
-.message-pill.success { background: rgba(48, 209, 88, 0.1); color: var(--system-green); }
-.message-pill.error { background: rgba(255, 69, 58, 0.1); color: var(--system-red); }
 
-/* History */
-.history-section {
+.mobile-content {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Action Card */
+.action-card-mobile {
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  border-radius: 20px;
+  background: var(--system-secondary-bg);
+  border: 1px solid var(--border);
 }
 
-.section-title {
+.icon-badge {
+  width: 56px;
+  height: 56px;
+  background: rgba(10, 132, 255, 0.1);
+  color: var(--system-blue);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.action-text {
+  text-align: center;
+}
+
+.action-text h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.action-text p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.btn-backup-mobile {
+  width: 100%;
+  height: 54px;
+  background: var(--system-blue);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-backup-mobile:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.btn-backup-mobile:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.alert-mobile {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-secondary);
-  padding: 0 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
 }
-.section-title h3 { font-size: 16px; margin: 0; }
 
-.backup-list {
-  display: grid;
+.alert-mobile.success {
+  background: rgba(48, 209, 88, 0.1);
+  color: var(--system-green);
+  border: 1px solid rgba(48, 209, 88, 0.2);
+}
+
+.alert-mobile.error {
+  background: rgba(255, 69, 58, 0.1);
+  color: var(--system-red);
+  border: 1px solid rgba(255, 69, 58, 0.2);
+}
+
+/* History Section */
+.history-section-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-header-mobile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary);
+}
+
+.section-header-mobile h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+  flex: 1;
+}
+
+.count-badge {
+  background: var(--system-tertiary-bg);
+  color: var(--system-blue);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.loading-mobile,
+.empty-mobile {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 12px;
 }
 
-.backup-item {
+.empty-mobile p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Backup List */
+.backup-list-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.backup-item-mobile {
+  background: var(--system-secondary-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backup-item-mobile:active {
+  transform: scale(0.98);
+  background: var(--system-tertiary-bg);
 }
 
 .item-icon {
   width: 44px;
   height: 44px;
-  background: var(--system-tertiary-bg);
+  background: rgba(48, 209, 88, 0.1);
+  color: var(--system-green);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--system-gray);
+  flex-shrink: 0;
 }
 
-.item-details { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.item-details .filename { font-size: 14px; font-weight: 600; font-family: monospace; color: var(--text-primary); }
+.item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
 
-.item-meta { display: flex; gap: 16px; }
-.item-meta span { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+.item-name {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-.download-mini-btn {
-  background: var(--system-tertiary-bg);
-  border: none;
-  color: var(--system-blue);
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+.item-date {
+  font-size: 11px;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: opacity 0.2s;
+  gap: 4px;
 }
 
-.download-mini-btn:active { opacity: 0.6; }
-
-.empty-backups { text-align: center; color: var(--text-secondary); padding: 40px; font-size: 14px; }
-
-.spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.item-badge {
+  background: var(--system-tertiary-bg);
+  color: var(--system-orange);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Desktop Override */
+@media (min-width: 768px) {
+  .backup-page-mobile {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
 </style>

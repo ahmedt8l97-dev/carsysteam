@@ -6,7 +6,8 @@ import {
   Box, 
   Plus, 
   CloudDownload,
-  LogOut 
+  LogOut,
+  User
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -23,7 +24,8 @@ function logout() {
     <!-- Desktop Sidebar -->
     <aside class="sidebar desktop-only">
       <div class="sidebar-header">
-        <span class="logo-text">المخزون</span>
+        <span class="logo-icon">🚗</span>
+        <span class="logo-text">xCar</span>
       </div>
       
       <div class="user-pill">
@@ -47,9 +49,9 @@ function logout() {
           <Plus :size="20" />
           <span>إضافة قطعة</span>
         </router-link>
-        <router-link to="/backup" class="nav-link">
-          <CloudDownload :size="20" />
-          <span>النسخ الاحتياطي</span>
+        <router-link to="/profile" class="nav-link">
+          <User :size="20" />
+          <span>الحساب والإعدادات</span>
         </router-link>
         <button @click="logout" class="nav-link logout-btn">
           <LogOut :size="20" />
@@ -78,14 +80,10 @@ function logout() {
         <Plus :size="24" />
         <span>إضافة</span>
       </router-link>
-      <router-link to="/backup" class="tab-item">
-        <CloudDownload :size="24" />
-        <span>نسخ</span>
+      <router-link to="/profile" class="tab-item">
+        <User :size="24" />
+        <span>حسابي</span>
       </router-link>
-      <a @click="logout" class="tab-item logout">
-        <LogOut :size="24" />
-        <span>خروج</span>
-      </a>
     </nav>
   </div>
 </template>
@@ -114,6 +112,24 @@ function logout() {
   margin-bottom: 32px;
   text-align: center;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.logo-text {
+  background: linear-gradient(135deg, var(--system-blue), var(--system-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+  letter-spacing: -0.5px;
 }
 
 .user-pill {

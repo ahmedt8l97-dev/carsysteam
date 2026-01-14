@@ -763,6 +763,39 @@ async def update_product(
     
     return product
 
+@app.get("/api/settings")
+async def get_settings(session: dict = Depends(require_permission("backup"))):
+    """جلب إعدادات النظام (للمدير فقط)"""
+    return {
+        "telegram_bot_token": BOT_TOKEN[:10] + "..." if BOT_TOKEN else None,
+        "telegram_chat_id": CHAT_ID,
+        "imgbb_api_key": IMGBB_API_KEY[:5] + "..." if IMGBB_API_KEY else None,
+        "version": "5.0.0",
+        "convex_url": CONVEX_URL
+    }
+
+@app.post("/api/settings")
+async def update_settings(
+    bot_token: str = Form(None),
+    chat_id: str = Form(None),
+    imgbb_key: str = Form(None),
+    session: dict = Depends(require_permission("backup"))
+):
+    """تحديث إعدادات النظام (للمدير فقط)"""
+    # Note: In a real app, we'd write to .env or a config file.
+    # For this demo/setup, we will update the global variables.
+    global BOT_TOKEN, CHAT_ID, IMGBB_API_KEY, TG_URL
+    
+    if bot_token:
+        BOT_TOKEN = bot_token
+        TG_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
+    if chat_id:
+        CHAT_ID = chat_id
+    if imgbb_key:
+        IMGBB_API_KEY = imgbb_key
+        
+    return {"message": "تم تحديث الإعدادات بنجاح"}
+
 @app.patch("/api/products/{product_number}/status")
 async def update_product_status(
     product_number: str, 
