@@ -74,8 +74,8 @@ async function saveEdit() {
     formData.append('model_number', editForm.value.model_number)
     formData.append('product_type', editForm.value.type)
     formData.append('quantity', editForm.value.quantity)
-    formData.append('price_iqd', editForm.value.price_iqd)
-    formData.append('wholesale_price_iqd', editForm.value.wholesale_price_iqd)
+    formData.append('price_iqd', parseFloat(editForm.value.price_iqd) || 0)
+    formData.append('wholesale_price_iqd', parseFloat(editForm.value.wholesale_price_iqd) || 0)
     
     // Add image if selected
     if (editImageFile.value) {
@@ -246,13 +246,13 @@ onMounted(load)
                 </div>
                 <div class="edit-field-group">
                   <label class="edit-label">سعر البيع</label>
-                  <input v-model.number="editForm.price_iqd" type="number" class="edit-input" placeholder="بيع">
+                  <input v-model="editForm.price_iqd" type="text" class="edit-input" placeholder="بيع" pattern="[0-9]*" inputmode="numeric">
                 </div>
               </div>
               
               <div class="edit-field-group">
                 <label class="edit-label">سعر الجملة</label>
-                <input v-model.number="editForm.wholesale_price_iqd" type="number" class="edit-input" placeholder="جملة">
+                <input v-model="editForm.wholesale_price_iqd" type="text" class="edit-input" placeholder="جملة" pattern="[0-9]*" inputmode="numeric">
               </div>
               
               <div class="edit-field-group">

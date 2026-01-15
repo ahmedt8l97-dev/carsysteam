@@ -761,6 +761,14 @@ async def update_product(
     
     update_product_in_db(product_number, product)
     
+    # Update on Telegram
+    msg_id = product.get("message_id")
+    if msg_id:
+        try:
+            await send_to_telegram(product, product.get("image"), message_id=msg_id)
+        except Exception as e:
+            print(f"Telegram Update Error: {e}")
+    
     return product
 
 @app.get("/api/settings")

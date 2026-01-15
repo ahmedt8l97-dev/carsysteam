@@ -39,8 +39,8 @@ async function submit() {
     formData.append('car_name', form.value.car_name)
     formData.append('product_type', form.value.type || 'قطع غيار')
     formData.append('quantity', form.value.quantity)
-    formData.append('price_iqd', form.value.price_iqd)
-    formData.append('wholesale_price_iqd', form.value.wholesale_price_iqd)
+    formData.append('price_iqd', parseFloat(form.value.price_iqd) || 0)
+    formData.append('wholesale_price_iqd', parseFloat(form.value.wholesale_price_iqd) || 0)
     
     // Add image if selected
     const file = fileInput.value?.files[0]
@@ -119,12 +119,12 @@ async function submit() {
 
         <div class="form-group">
           <label>السعر (IQD)</label>
-          <input type="number" v-model="form.price_iqd" required placeholder="السعر">
+          <input type="text" v-model="form.price_iqd" required placeholder="السعر" pattern="[0-9]*" inputmode="numeric">
         </div>
 
         <div class="form-group">
           <label>سعر الجملة (IQD)</label>
-          <input type="number" v-model="form.wholesale_price_iqd" required placeholder="سعر الجملة">
+          <input type="text" v-model="form.wholesale_price_iqd" required placeholder="سعر الجملة" pattern="[0-9]*" inputmode="numeric">
         </div>
       </div>
 
