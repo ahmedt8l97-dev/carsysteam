@@ -714,6 +714,57 @@ async def get_image(image_id: str):
     
     raise HTTPException(status_code=404, detail="الصورة غير موجودة")
 
+@app.patch("/api/products/{product_number}/status")
+async def update_product_status(
+    product_number: str, 
+    action: str = Query(...)
+):
+    """تحديث حالة المنتج (تم بيع، تم بيع بالكامل، نفذ)"""
+    cache = load_cache()
+    
+    if product_number not in cache:
+        raise HTTPException(status_code=404, detail="المنتج غير موجود")
+    
+    product = cache[product_number]
+    
+    if action == "sold_one":
+        # تم بيع قطعة واحدة
+        if product["quantity"] > 0:
+            product["quantity"] -= 1
+            if product["quantity"] == 0:
+                product["status"] = "نفذ"
+            else:
+                product["status"] = "متوفر"
+    elif action == "sold_all":
+        # تم بيع الكل
+        product["quantity"] = 0
+        product["status"] = "نفذ"
+    elif action == "out_of_stock":
+        # نفذ
+        product["quantity"] = 0
+        product["status"] = "نفذ"
+    else:
+        raise HTTPException(status_code=400, detail="إجراء غير صالح")
+    
+    product["last_update"] = datetime.now().isoformat()
+    
+    try:
+        # Save to Convex
+        update_product_in_db(product_number, product)
+    except Exception as e:
+        print(f"Error updating DB: {e}")
+        raise HTTPException(status_code=500, detail=f"خطأ في تحديث قاعدة البيانات: {str(e)}")
+    
+    # Update on Telegram
+    msg_id = product.get("message_id")
+    if msg_id:
+        try:
+            await send_to_telegram(product, product.get("image"), message_id=msg_id)
+        except Exception as e:
+            print(f"Telegram Update Error: {e}")
+            
+    return product
+
 @app.patch("/api/products/{product_number}")
 async def update_product(
     product_number: str,
@@ -820,56 +871,7 @@ async def update_settings(
         
     return {"message": "تم تحديث الإعدادات بنجاح"}
 
-@app.patch("/api/products/{product_number}/status")
-async def update_product_status(
-    product_number: str, 
-    action: str = Query(...)
-):
-    """تحديث حالة المنتج (تم بيع، تم بيع بالكامل، نفذ)"""
-    cache = load_cache()
-    
-    if product_number not in cache:
-        raise HTTPException(status_code=404, detail="المنتج غير موجود")
-    
-    product = cache[product_number]
-    
-    if action == "sold_one":
-        # تم بيع قطعة واحدة
-        if product["quantity"] > 0:
-            product["quantity"] -= 1
-            if product["quantity"] == 0:
-                product["status"] = "نفذ"
-            else:
-                product["status"] = "متوفر"
-    elif action == "sold_all":
-        # تم بيع الكل
-        product["quantity"] = 0
-        product["status"] = "نفذ"
-    elif action == "out_of_stock":
-        # نفذ
-        product["quantity"] = 0
-        product["status"] = "نفذ"
-    else:
-        raise HTTPException(status_code=400, detail="إجراء غير صالح")
-    
-    product["last_update"] = datetime.now().isoformat()
-    
-    try:
-        # Save to Convex
-        update_product_in_db(product_number, product)
-    except Exception as e:
-        print(f"Error updating DB: {e}")
-        raise HTTPException(status_code=500, detail=f"خطأ في تحديث قاعدة البيانات: {str(e)}")
-    
-    # Update on Telegram
-    msg_id = product.get("message_id")
-    if msg_id:
-        try:
-            await send_to_telegram(product, product.get("image"), message_id=msg_id)
-        except Exception as e:
-            print(f"Telegram Update Error: {e}")
-            
-    return product
+
 
 @app.delete("/api/products/{product_number}")
 async def delete_product(

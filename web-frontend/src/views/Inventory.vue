@@ -230,11 +230,27 @@ onMounted(load)
               </div>
             </div>
 
-            <div class="card-actions">
-              <button @click="updateStatus(p.product_number, 'sold_one')" class="action-link sell">بيع قطعة</button>
-              <button @click="updateStatus(p.product_number, 'sold_all')" class="action-link sell-all">بيع الكل</button>
-              <button @click="startEditing(p)" class="action-link edit">تعديل</button>
-              <button @click="removeProduct(p.product_number)" class="action-link delete">حذف</button>
+            <div class="card-actions-premium">
+              <div class="sell-actions-v2">
+                <button @click="updateStatus(p.product_number, 'sold_one')" class="btn-action sell-one">
+                   <span class="btn-icon">💰</span>
+                   <div class="btn-text-content">
+                     <span class="btn-title">بيع قطعة</span>
+                     <span class="btn-desc">-1 من المخزن</span>
+                   </div>
+                </button>
+                <button @click="updateStatus(p.product_number, 'sold_all')" class="btn-action sell-all">
+                   <span class="btn-icon">🔥</span>
+                   <div class="btn-text-content">
+                     <span class="btn-title">بيع الكل</span>
+                     <span class="btn-desc">تصفية الكمية</span>
+                   </div>
+                </button>
+              </div>
+              <div class="management-actions">
+                <button @click="startEditing(p)" class="btn-manage edit">تعديل البيانات</button>
+                <button @click="removeProduct(p.product_number)" class="btn-manage delete">حذف نهائي</button>
+              </div>
             </div>
           </template>
 
@@ -419,43 +435,76 @@ onMounted(load)
   margin-top: 4px;
 }
 
+.card-actions-premium {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sell-actions-v2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.btn-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: right;
+  background: rgba(255,255,255,0.05);
+}
+
+.btn-action:active { transform: scale(0.96); }
+
+.btn-action.sell-one { background: rgba(48, 209, 88, 0.15); border: 1px solid rgba(48, 209, 88, 0.3); }
+.btn-action.sell-all { background: rgba(255, 69, 58, 0.15); border: 1px solid rgba(255, 69, 58, 0.3); }
+
+.btn-icon { font-size: 20px; }
+.btn-text-content { display: flex; flex-direction: column; }
+.btn-title { font-weight: 800; font-size: 14px; color: white; }
+.btn-desc { font-size: 10px; opacity: 0.6; color: white; }
+
+.management-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.btn-manage {
+  padding: 10px;
+  border-radius: 12px;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-manage.edit { background: rgba(255, 159, 10, 0.1); color: var(--system-orange); }
+.btn-manage.delete { background: rgba(255, 69, 58, 0.05); color: var(--system-red); }
+
 @media (max-width: 480px) {
   .info-card { 
     flex-direction: column; 
-    min-height: auto;
-    border-radius: 24px;
-    background: linear-gradient(145deg, var(--system-secondary-bg), #1a1a1c);
+    border-radius: 28px;
+    background: #1c1c1e;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   }
-  .card-image { 
-    width: 100%; 
-    height: 200px; 
-    border-bottom: 1px solid var(--border);
-  }
+  .card-image { width: 100%; height: 220px; }
+  .status-chip { top: 12px; right: 12px; padding: 6px 12px; font-size: 12px; }
   .card-content { padding: 20px; }
-  .product-name { font-size: 20px; }
-  .specs-grid { 
-    grid-template-columns: 1fr 1fr; 
-    background: rgba(255,255,255,0.02);
-    border: 0.5px solid rgba(255,255,255,0.05);
-  }
-  .card-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding-top: 15px;
-  }
-  .action-link {
-    background: rgba(255,255,255,0.03);
-    padding: 12px;
-    border-radius: 12px;
-    text-align: center;
-  }
+  .product-name { font-size: 22px; }
+  .specs-grid { gap: 15px; padding: 15px; margin-bottom: 20px; }
+  .sell-actions-v2 { grid-template-columns: 1fr; } /* Full width on mobile for selling buttons */
+  .btn-action { padding: 16px; }
 }
-
-.action-link.sell { color: var(--system-blue); border: 0.5px solid rgba(10, 132, 255, 0.2); }
-.action-link.sell-all { color: var(--system-green); border: 0.5px solid rgba(48, 209, 88, 0.2); }
-.action-link.edit { color: var(--system-orange); border: 0.5px solid rgba(255, 159, 10, 0.2); }
-.action-link.delete { color: var(--system-red); border: 0.5px solid rgba(255, 69, 58, 0.2); }
 
 .edit-form { display: flex; flex-direction: column; gap: 12px; }
 
