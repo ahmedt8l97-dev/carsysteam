@@ -69,8 +69,15 @@ function startEditing(p) {
     model_number: p.model_number || '',
     type: p.type || '',
     quantity: p.quantity,
-    price_iqd: p.price_iqd,
-    wholesale_price_iqd: p.wholesale_price_iqd
+    price_iqd: p.price_iqd.toLocaleString(),
+    wholesale_price_iqd: p.wholesale_price_iqd.toLocaleString()
+  }
+}
+
+function formatInputPrice(e, field) {
+  let val = e.target.value.replace(/,/g, '');
+  if (!isNaN(val) && val !== '') {
+    editForm.value[field] = Number(val).toLocaleString();
   }
 }
 
@@ -83,13 +90,14 @@ async function saveEdit() {
   const p = products.value.find(item => item._id === editingId.value)
   try {
     const formData = new FormData()
+    const stripCommas = (str) => String(str).replace(/,/g, '');
     formData.append('product_name', editForm.value.product_name)
     formData.append('car_name', editForm.value.car_name)
     formData.append('model_number', editForm.value.model_number)
     formData.append('product_type', editForm.value.type)
     formData.append('quantity', editForm.value.quantity)
-    formData.append('price_iqd', parseFloat(editForm.value.price_iqd) || 0)
-    formData.append('wholesale_price_iqd', parseFloat(editForm.value.wholesale_price_iqd) || 0)
+    formData.append('price_iqd', stripCommas(editForm.value.price_iqd))
+    formData.append('wholesale_price_iqd', stripCommas(editForm.value.wholesale_price_iqd))
     
     // Add image if selected
     if (editImageFile.value) {
@@ -265,13 +273,13 @@ onMounted(load)
                 </div>
                 <div class="edit-field-group">
                   <label class="edit-label">سعر البيع</label>
-                  <input v-model="editForm.price_iqd" type="text" class="edit-input" placeholder="بيع">
+                  <input v-model="editForm.price_iqd" @input="e => formatInputPrice(e, 'price_iqd')" type="text" class="edit-input" placeholder="بيع">
                 </div>
               </div>
               
               <div class="edit-field-group">
                 <label class="edit-label">سعر الجملة</label>
-                <input v-model="editForm.wholesale_price_iqd" type="text" class="edit-input" placeholder="جملة">
+                <input v-model="editForm.wholesale_price_iqd" @input="e => formatInputPrice(e, 'wholesale_price_iqd')" type="text" class="edit-input" placeholder="جملة">
               </div>
               
               <div class="edit-field-group">
@@ -411,27 +419,43 @@ onMounted(load)
   margin-top: 4px;
 }
 
-.card-actions {
-  margin-top: auto;
-  display: flex;
-  justify-content: space-between;
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
-  gap: 8px;
+@media (max-width: 480px) {
+  .info-card { 
+    flex-direction: column; 
+    min-height: auto;
+    border-radius: 24px;
+    background: linear-gradient(145deg, var(--system-secondary-bg), #1a1a1c);
+  }
+  .card-image { 
+    width: 100%; 
+    height: 200px; 
+    border-bottom: 1px solid var(--border);
+  }
+  .card-content { padding: 20px; }
+  .product-name { font-size: 20px; }
+  .specs-grid { 
+    grid-template-columns: 1fr 1fr; 
+    background: rgba(255,255,255,0.02);
+    border: 0.5px solid rgba(255,255,255,0.05);
+  }
+  .card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding-top: 15px;
+  }
+  .action-link {
+    background: rgba(255,255,255,0.03);
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+  }
 }
 
-.action-link {
-  background: transparent;
-  border: none;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.action-link.sell { color: var(--system-blue); }
-.action-link.sell-all { color: var(--system-green); }
-.action-link.edit { color: var(--system-orange); }
-.action-link.delete { color: var(--system-red); }
+.action-link.sell { color: var(--system-blue); border: 0.5px solid rgba(10, 132, 255, 0.2); }
+.action-link.sell-all { color: var(--system-green); border: 0.5px solid rgba(48, 209, 88, 0.2); }
+.action-link.edit { color: var(--system-orange); border: 0.5px solid rgba(255, 159, 10, 0.2); }
+.action-link.delete { color: var(--system-red); border: 0.5px solid rgba(255, 69, 58, 0.2); }
 
 .edit-form { display: flex; flex-direction: column; gap: 12px; }
 

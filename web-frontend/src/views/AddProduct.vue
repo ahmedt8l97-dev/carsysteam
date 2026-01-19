@@ -25,9 +25,13 @@ function onFileSelect(e) {
   }
 }
 
-function clearImage() {
-  previewUrl.value = null
-  fileInput.value.value = ''
+const stripCommas = (str) => String(str).replace(/,/g, '');
+
+function formatInputPrice(e, field) {
+  let val = e.target.value.replace(/,/g, '');
+  if (!isNaN(val) && val !== '') {
+    form.value[field] = Number(val).toLocaleString();
+  }
 }
 
 async function submit() {
@@ -39,8 +43,8 @@ async function submit() {
     formData.append('car_name', form.value.car_name)
     formData.append('product_type', form.value.type || 'قطع غيار')
     formData.append('quantity', form.value.quantity)
-    formData.append('price_iqd', parseFloat(form.value.price_iqd) || 0)
-    formData.append('wholesale_price_iqd', parseFloat(form.value.wholesale_price_iqd) || 0)
+    formData.append('price_iqd', stripCommas(form.value.price_iqd))
+    formData.append('wholesale_price_iqd', stripCommas(form.value.wholesale_price_iqd))
     
     // Add image if selected
     const file = fileInput.value?.files[0]
@@ -119,12 +123,12 @@ async function submit() {
 
         <div class="form-group">
           <label>السعر (IQD)</label>
-          <input type="text" v-model="form.price_iqd" required placeholder="السعر">
+          <input type="text" v-model="form.price_iqd" @input="e => formatInputPrice(e, 'price_iqd')" required placeholder="السعر">
         </div>
 
         <div class="form-group">
           <label>سعر الجملة (IQD)</label>
-          <input type="text" v-model="form.wholesale_price_iqd" required placeholder="سعر الجملة">
+          <input type="text" v-model="form.wholesale_price_iqd" @input="e => formatInputPrice(e, 'wholesale_price_iqd')" required placeholder="سعر الجملة">
         </div>
       </div>
 

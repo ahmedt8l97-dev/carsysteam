@@ -647,11 +647,18 @@ async def create_product(
     model_number: str = Form(""),
     product_type: str = Form("قطعة"),
     quantity: int = Form(1),
-    price_iqd: float = Form(...),
-    wholesale_price_iqd: float = Form(...),
+    price_iqd: str = Form(...),
+    wholesale_price_iqd: str = Form(...),
     image: Optional[UploadFile] = File(None)
 ):
     """إضافة منتج جديد - الصور في ImgBB والبيانات في التليجرام"""
+    
+    # تحويل الأسعار من نص إلى رقم (مع إزالة الفواصل إن وجدت)
+    try:
+        price_iqd = float(str(price_iqd).replace(',', ''))
+        wholesale_price_iqd = float(str(wholesale_price_iqd).replace(',', ''))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="صيغة السعر غير صحيحة")
     
     if not BOT_TOKEN or not CHAT_ID:
         raise HTTPException(status_code=500, detail="التليجرام غير مُعد. راجع ملف .env")
@@ -715,11 +722,20 @@ async def update_product(
     model_number: str = Form(None),
     product_type: str = Form(None),
     quantity: int = Form(None),
-    price_iqd: float = Form(None),
-    wholesale_price_iqd: float = Form(None),
+    price_iqd: str = Form(None),
+    wholesale_price_iqd: str = Form(None),
     image: Optional[UploadFile] = File(None)
 ):
     """تحديث منتج موجود"""
+    
+    # تحويل الأسعار من نص إلى رقم (مع إزالة الفواصل إن وجدت)
+    try:
+        if price_iqd is not None:
+            price_iqd = float(str(price_iqd).replace(',', ''))
+        if wholesale_price_iqd is not None:
+            wholesale_price_iqd = float(str(wholesale_price_iqd).replace(',', ''))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="صيغة السعر غير صحيحة")
     cache = load_cache()
     
     if product_number not in cache:
