@@ -18,7 +18,8 @@ import {
   AlertCircle,
   Settings,
   Bell,
-  Lock
+  Lock,
+  X
 } from 'lucide-vue-next'
 
 import { convex } from '../lib/convex'

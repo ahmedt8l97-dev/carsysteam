@@ -71,7 +71,7 @@ function logout() {
     <main class="main-content">
       <div class="content-wrapper">
         <router-view v-slot="{ Component }">
-          <transition name="page-fade" mode="out-in">
+          <transition name="page-fade">
             <component :is="Component" />
           </transition>
         </router-view>
@@ -291,19 +291,30 @@ function logout() {
 }
 
 /* Transitions */
+.content-wrapper {
+  position: relative;
+}
+
 .page-fade-enter-active,
 .page-fade-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-fade-leave-active {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
 .page-fade-enter-from {
   opacity: 0;
-  transform: translateY(10px);
+  transform: scale(0.98) translateY(10px);
 }
 
 .page-fade-leave-to {
   opacity: 0;
-  transform: translateY(-10px);
+  transform: scale(1.02) translateY(-10px);
 }
 
 /* Mobile Tab Bar */
