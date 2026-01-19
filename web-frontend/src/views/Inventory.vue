@@ -117,7 +117,12 @@ async function updateStatus(productNumber, action) {
     const res = await fetch(`/api/products/${encodeURIComponent(productNumber)}/status?action=${action}`, {
       method: 'PATCH',
     })
-    if (!res.ok) throw new Error('Update failed')
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Update failed');
+    }
+    
     await load()
   } catch (e) {
     alert('حدث خطأ: ' + e.message)

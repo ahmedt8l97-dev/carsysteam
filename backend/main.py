@@ -3,7 +3,7 @@ Car Stock Management System - Hybrid Cloud Storage
 نظام إدارة مخزون السيارات - تخزين هجين (تليجرام + ImgBB)
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, BackgroundTasks, Depends, Header
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, BackgroundTasks, Depends, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse, RedirectResponse
@@ -807,7 +807,7 @@ async def update_settings(
 @app.patch("/api/products/{product_number}/status")
 async def update_product_status(
     product_number: str, 
-    action: str
+    action: str = Query(...)
 ):
     """تحديث حالة المنتج (تم بيع، تم بيع بالكامل، نفذ)"""
     cache = load_cache()
@@ -838,8 +838,12 @@ async def update_product_status(
     
     product["last_update"] = datetime.now().isoformat()
     
-    # Save to Convex
-    update_product_in_db(product_number, product)
+    try:
+        # Save to Convex
+        update_product_in_db(product_number, product)
+    except Exception as e:
+        print(f"Error updating DB: {e}")
+        raise HTTPException(status_code=500, detail=f"خطأ في تحديث قاعدة البيانات: {str(e)}")
     
     # Update on Telegram
     msg_id = product.get("message_id")
@@ -1208,45 +1212,7 @@ async def import_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"خطأ في الاستيراد: {str(e)}")
 
-@app.post("/api/backup/manual")
-async def create_manual_backup_v2(session: dict = Depends(require_permission("backup"))):
-    """إنشاء نسخة احتياطية يدوية"""
-    filepath = create_backup("manual")
-    
-    if filepath:
-        return {
-            "status": "success",
-            "message": "تم إنشاء النسخة الاحتياطية بنجاح",
-            "filepath": filepath,
-            "filename": os.path.basename(filepath)
-        }
-    else:
-        raise HTTPException(status_code=500, detail="فشل إنشاء النسخة الاحتياطية")
 
-@app.get("/api/backups/list")
-async def list_backups():
-    """عرض قائمة النسخ الاحتياطية"""
-    try:
-        backups = []
-        
-        for filename in sorted(os.listdir(BACKUP_DIR), reverse=True):
-            if filename.startswith("backup_") and filename.endswith(".json"):
-                filepath = os.path.join(BACKUP_DIR, filename)
-                file_stat = os.stat(filepath)
-                
-                backups.append({
-                    "filename": filename,
-                    "size": file_stat.st_size,
-                    "created": datetime.fromtimestamp(file_stat.st_mtime).isoformat(),
-                    "type": filename.split("_")[1] if len(filename.split("_")) > 1 else "unknown"
-                })
-        
-        return {
-            "total_backups": len(backups),
-            "backups": backups
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"خطأ في قراءة النسخ الاحتياطية: {str(e)}")
 async def sync_from_telegram():
     """مزامنة البيانات من قناة التليجرام (استرجاع ذكي)"""
     
