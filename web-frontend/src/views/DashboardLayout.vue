@@ -23,65 +23,78 @@ function logout() {
   <div class="dashboard-layout">
     <!-- Desktop Sidebar -->
     <aside class="sidebar desktop-only">
-      <div class="sidebar-header">
-        <span class="logo-icon">🚗</span>
-        <span class="logo-text">xCar</span>
-      </div>
-      
-      <div class="user-pill">
-        <div class="avatar-circle">{{ auth.user?.name?.[0] || '?' }}</div>
-        <div class="user-meta">
-          <div class="name">{{ auth.user?.name }}</div>
-          <div class="role">{{ auth.user?.role === 'admin' ? 'مدير' : 'موظف' }}</div>
+      <div class="sidebar-brand">
+        <div class="logo-box">
+          <span class="logo-icon">🚗</span>
+        </div>
+        <div class="logo-text-stack">
+          <span class="logo-main">xCar</span>
+          <span class="logo-sub">نظام إدارة المخزون</span>
         </div>
       </div>
-
+      
       <nav class="side-nav">
         <router-link to="/dashboard" class="nav-link">
-          <Home :size="20" />
-          <span>الرئيسية</span>
+          <div class="nav-icon-box"><Home :size="20" /></div>
+          <span>لوحة التحكم</span>
         </router-link>
         <router-link to="/inventory" class="nav-link">
-          <Box :size="20" />
-          <span>المخزون</span>
+          <div class="nav-icon-box"><Box :size="20" /></div>
+          <span>المخزون العام</span>
         </router-link>
         <router-link to="/add" class="nav-link">
-          <Plus :size="20" />
-          <span>إضافة قطعة</span>
+          <div class="nav-icon-box"><Plus :size="20" /></div>
+          <span>إضافة منتج</span>
         </router-link>
         <router-link to="/profile" class="nav-link">
-          <User :size="20" />
-          <span>الحساب والإعدادات</span>
+          <div class="nav-icon-box"><User :size="20" /></div>
+          <span>إعدادات النظام</span>
         </router-link>
-        <button @click="logout" class="nav-link logout-btn">
-          <LogOut :size="20" />
-          <span>خروج</span>
-        </button>
       </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-cell">
+          <div class="user-avatar">{{ auth.user?.name?.[0] }}</div>
+          <div class="user-details">
+            <span class="u-name">{{ auth.user?.name }}</span>
+            <span class="u-role">{{ auth.user?.role === 'admin' ? 'مدير' : 'موظف' }}</span>
+          </div>
+        </div>
+        <button @click="logout" class="footer-logout">
+          <LogOut :size="18" />
+          <span>تسجيل الخروج</span>
+        </button>
+      </div>
     </aside>
 
     <!-- Main Content Area -->
     <main class="main-content">
-      <router-view></router-view>
+      <div class="content-wrapper">
+        <router-view v-slot="{ Component }">
+          <transition name="page-fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </div>
       <div class="mobile-spacer mobile-only"></div>
     </main>
 
     <!-- Mobile Tab Bar (iOS Style) -->
     <nav class="mobile-tab-bar mobile-only">
       <router-link to="/dashboard" class="tab-item">
-        <Home :size="24" />
+        <Home :size="22" />
         <span>الرئيسية</span>
       </router-link>
       <router-link to="/inventory" class="tab-item">
-        <Box :size="24" />
+        <Box :size="22" />
         <span>المخزون</span>
       </router-link>
       <router-link to="/add" class="tab-item">
-        <Plus :size="24" />
+        <Plus :size="22" />
         <span>إضافة</span>
       </router-link>
       <router-link to="/profile" class="tab-item">
-        <User :size="24" />
+        <User :size="22" />
         <span>حسابي</span>
       </router-link>
     </nav>
@@ -92,97 +105,205 @@ function logout() {
 .dashboard-layout {
   display: flex;
   min-height: 100vh;
+  background: var(--system-bg);
 }
 
+/* Sidebar Styling */
 .sidebar {
-  width: 240px;
-  background: var(--system-secondary-bg);
-  border-left: 1px solid var(--border);
+  width: 280px;
+  background: rgba(28, 28, 30, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  padding: 24px 12px;
+  padding: 32px 16px;
   position: sticky;
   top: 0;
   height: 100vh;
+  z-index: 100;
 }
 
-.sidebar-header {
-  font-size: 20px;
-  font-weight: 800;
-  margin-bottom: 32px;
-  text-align: center;
-  color: var(--text-primary);
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 48px;
+  padding: 0 8px;
+}
+
+.logo-box {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--system-blue), #5ac8fa);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  font-size: 24px;
+  box-shadow: 0 8px 16px rgba(10, 132, 255, 0.3);
 }
 
-.logo-icon {
-  font-size: 28px;
+.logo-text-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-main {
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.5px;
   line-height: 1;
 }
 
-.logo-text {
-  background: linear-gradient(135deg, var(--system-blue), var(--system-green));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 900;
-  letter-spacing: -0.5px;
+.logo-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-top: 2px;
 }
 
-.user-pill {
+/* Nav links */
+.side-nav {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
-  background: var(--system-tertiary-bg);
-  border-radius: 14px;
-  margin-bottom: 24px;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
 }
 
-.avatar-circle {
-  width: 36px;
-  height: 36px;
-  background: var(--system-blue);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-
-.user-meta .name { font-weight: 600; font-size: 14px; }
-.user-meta .role { font-size: 11px; color: var(--text-secondary); }
-
-.side-nav { display: grid; gap: 4px; }
 .nav-link {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
   color: var(--text-secondary);
-  transition: 0.2s;
-  background: transparent;
-  border: none;
+  text-decoration: none;
+  font-weight: 600;
   font-size: 15px;
-  width: 100%;
-  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.nav-link:hover, .nav-link.router-link-active {
-  background: var(--system-tertiary-bg);
+.nav-icon-box {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  transform: translateX(-4px);
+}
+
+.nav-link:active {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0.98);
+}
+
+.nav-link.router-link-active {
+  background: rgba(10, 132, 255, 0.1);
   color: var(--system-blue);
 }
 
-.logout-btn { margin-top: auto; color: var(--system-red); }
+.nav-link.router-link-active .nav-icon-box {
+  background: var(--system-blue);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+}
 
+/* Sidebar Footer */
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+}
+
+.user-avatar {
+  width: 38px;
+  height: 38px;
+  background: var(--system-tertiary-bg);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: var(--system-blue);
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.u-name { font-size: 14px; font-weight: 700; color: #fff; }
+.u-role { font-size: 11px; color: var(--text-secondary); }
+
+.footer-logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 69, 58, 0.1);
+  border: none;
+  border-radius: 12px;
+  color: var(--system-red);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.footer-logout:hover {
+  background: var(--system-red);
+  color: #fff;
+}
+
+/* Main Content Area */
 .main-content {
   flex: 1;
   background: var(--system-bg);
-  padding: 24px;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.content-wrapper {
+  min-height: 100%;
+}
+
+/* Transitions */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 /* Mobile Tab Bar */
@@ -211,14 +332,17 @@ function logout() {
   font-size: 10px;
   gap: 3px;
   flex: 1;
-  transition: color 0.2s;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.tab-item:active {
+  opacity: 0.6;
 }
 
 .tab-item.router-link-active {
   color: var(--system-blue);
 }
-
-.tab-item.logout { color: var(--system-red); }
 
 .mobile-spacer { height: 84px; }
 
@@ -228,6 +352,6 @@ function logout() {
 @media (max-width: 768px) {
   .desktop-only { display: none; }
   .mobile-only { display: flex; }
-  .main-content { padding: 16px; }
+  .main-content { padding: 0; } /* Padding handled by views */
 }
 </style>

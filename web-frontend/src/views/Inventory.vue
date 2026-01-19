@@ -328,11 +328,17 @@ onMounted(load)
 </template>
 
 <style scoped>
+.inventory-page {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px 40px;
+}
+
 .full-info-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding-bottom: 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 20px;
+  padding-bottom: 60px;
 }
 
 .info-card {
@@ -340,17 +346,43 @@ onMounted(load)
   display: flex;
   flex-direction: row;
   overflow: hidden;
-  background: var(--system-secondary-bg);
-  border: 1px solid var(--border);
-  min-height: 180px;
-  border-radius: 16px;
+  background: rgba(28, 28, 30, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 200px;
+  border-radius: 20px;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(10, 132, 255, 0.3);
 }
 
 .card-image {
-  width: 140px;
+  width: 160px;
   position: relative;
   background: #111;
   flex-shrink: 0;
+}
+
+@media (max-width: 1100px) {
+  .full-info-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .inventory-page { padding: 16px; }
+  .full-info-grid { grid-template-columns: 1fr; }
+  .info-card { flex-direction: column; border-radius: 24px; }
+  .card-image { width: 100%; height: 200px; }
+}
+
+.info-card:active {
+  transform: scale(0.99);
+  border-color: rgba(10, 132, 255, 0.5);
 }
 
 .card-image img {
@@ -462,7 +494,10 @@ onMounted(load)
   background: rgba(255,255,255,0.05);
 }
 
-.btn-action:active { transform: scale(0.96); }
+.btn-action:active { 
+  transform: scale(0.96); 
+  background: rgba(255, 255, 255, 0.1);
+}
 
 .btn-action.sell-one { background: rgba(48, 209, 88, 0.15); border: 1px solid rgba(48, 209, 88, 0.3); }
 .btn-action.sell-all { background: rgba(255, 69, 58, 0.15); border: 1px solid rgba(255, 69, 58, 0.3); }
@@ -560,7 +595,8 @@ onMounted(load)
 }
 
 .ios-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.refresh-circular { background: var(--system-secondary-bg); border: none; color: var(--system-blue); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.refresh-circular { background: var(--system-secondary-bg); border: none; color: var(--system-blue); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+.refresh-circular:active { transform: scale(0.9); opacity: 0.7; }
 
 .search-section { 
   margin-bottom: 24px;

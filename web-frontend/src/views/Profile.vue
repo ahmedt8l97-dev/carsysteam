@@ -174,573 +174,502 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="profile-android">
-    <!-- Header Card -->
-    <div class="profile-header-card">
-      <div class="avatar-circle">
-        {{ auth.user?.name?.[0] || '?' }}
+  <div class="profile-dashboard">
+    <!-- Header Section -->
+    <header class="main-header glass">
+      <div class="user-profile-hero">
+        <div class="avatar-large">
+          {{ auth.user?.name?.[0] || '?' }}
+          <div class="status-indicator"></div>
+        </div>
+        <div class="hero-text">
+          <h1>{{ auth.user?.name }}</h1>
+          <p>{{ auth.user?.username }} @ {{ userRole }}</p>
+        </div>
       </div>
-      <div class="user-details">
-        <h2>{{ auth.user?.name }}</h2>
-        <p>{{ auth.user?.username }}</p>
-        <span class="role-chip">{{ userRole }}</span>
+      <div class="header-actions">
+        <button @click="openEditDialog" class="btn-icon-labeled">
+          <Edit3 :size="18" />
+          <span>تعديل الملف</span>
+        </button>
+        <button @click="handleLogout" class="btn-icon-labeled logout">
+          <LogOut :size="18" />
+          <span>تسجيل الخروج</span>
+        </button>
       </div>
-    </div>
+    </header>
 
     <!-- Alert Messages -->
-    <div v-if="message.text" :class="['alert-banner', message.type]">
-      <CheckCircle v-if="message.type === 'success'" :size="18" />
-      <AlertCircle v-else :size="18" />
-      <span>{{ message.text }}</span>
-    </div>
+    <transition name="fade">
+      <div v-if="message.text" :class="['alert-banner', message.type]">
+        <CheckCircle v-if="message.type === 'success'" :size="18" />
+        <AlertCircle v-else :size="18" />
+        <span>{{ message.text }}</span>
+      </div>
+    </transition>
 
-    <!-- Settings Sections -->
-    <div class="settings-container">
-      <!-- Account Section -->
-      <div class="settings-section">
-        <h3 class="section-title">الحساب</h3>
-        <div class="settings-list">
-          <button @click="openEditDialog" class="setting-item">
-            <div class="setting-icon blue">
-              <Edit3 :size="20" />
+    <div class="profile-grid">
+      <!-- Account & Security Column -->
+      <div class="profile-column">
+        <section class="settings-card glass">
+          <h2 class="section-title">
+            <Lock :size="20" />
+            <span>الحساب والأمان</span>
+          </h2>
+          
+          <div class="settings-stack">
+            <div class="setting-row">
+              <div class="icon-orb blue"><User :size="18" /></div>
+              <div class="setting-text">
+                <span class="label">الاسم الكامل</span>
+                <span class="value">{{ auth.user?.name }}</span>
+              </div>
             </div>
-            <div class="setting-content">
-              <span class="setting-label">تعديل المعلومات الشخصية</span>
-              <span class="setting-desc">الاسم واسم المستخدم</span>
-            </div>
-            <ChevronLeft :size="20" class="chevron" />
-          </button>
 
-          <button @click="showPasswordDialog = true" class="setting-item">
-            <div class="setting-icon orange">
-              <Key :size="20" />
+            <div class="setting-row">
+              <div class="icon-orb purple"><Mail :size="18" /></div>
+              <div class="setting-text">
+                <span class="label">اسم المستخدم</span>
+                <span class="value">{{ auth.user?.username }}</span>
+              </div>
             </div>
-            <div class="setting-content">
-              <span class="setting-label">تغيير كلمة المرور</span>
-              <span class="setting-desc">تحديث كلمة المرور الخاصة بك</span>
-            </div>
-            <ChevronLeft :size="20" class="chevron" />
-          </button>
 
-          <div class="setting-item disabled">
-            <div class="setting-icon purple">
-              <Shield :size="20" />
+            <div class="setting-row">
+              <div class="icon-orb orange"><Shield :size="18" /></div>
+              <div class="setting-text">
+                <span class="label">نوع الحساب</span>
+                <span class="value">{{ userRole }}</span>
+              </div>
             </div>
-            <div class="setting-content">
-              <span class="setting-label">الصلاحيات</span>
-              <span class="setting-desc">{{ userRole }}</span>
-            </div>
+
+            <button @click="showPasswordDialog = true" class="action-row">
+              <div class="icon-orb teal"><Key :size="18" /></div>
+              <div class="setting-text">
+                <span class="label">كلمة المرور</span>
+                <span class="value">تغيير كلمة المرور الخاصة بك</span>
+              </div>
+              <ChevronLeft :size="16" />
+            </button>
           </div>
-        </div>
+        </section>
       </div>
 
-      <!-- Backup Section -->
-      <div class="settings-section">
-        <h3 class="section-title">النسخ الاحتياطي</h3>
-        <div class="settings-list">
-          <button @click="triggerManualBackup" class="setting-item" :disabled="manualBackupLoading">
-            <div class="setting-icon green">
+      <!-- Backup & Data Column -->
+      <div class="profile-column">
+        <section class="settings-card glass">
+          <h2 class="section-title">
+            <Database :size="20" />
+            <span>النسخ الاحتياطي والبيانات</span>
+          </h2>
+          
+          <div class="backup-cta">
+            <div class="cta-content">
+              <h3>النسخ الاحتياطي السحابي</h3>
+              <p>قم بحفظ نسخة من بياناتك الحالية وتصديرها إلى صيغة JSON آمنة.</p>
+            </div>
+            <button @click="triggerManualBackup" class="cta-btn" :disabled="manualBackupLoading">
               <CloudDownload :size="20" />
-            </div>
-            <div class="setting-content">
-              <span class="setting-label">{{ manualBackupLoading ? 'جاري الحفظ...' : 'إنشاء نسخة احتياطية' }}</span>
-              <span class="setting-desc">حفظ البيانات وإرسالها للتليجرام</span>
-            </div>
-            <ChevronLeft :size="20" class="chevron" />
-          </button>
-
-          <button @click="openBackupDialog" class="setting-item">
-            <div class="setting-icon teal">
-              <Database :size="20" />
-            </div>
-            <div class="setting-content">
-              <span class="setting-label">سجل النسخ الاحتياطي</span>
-              <span class="setting-desc">{{ backups.length }} نسخة محفوظة</span>
-            </div>
-            <ChevronLeft :size="20" class="chevron" />
-          </button>
-        </div>
-      </div>
-
-      <!-- System Section -->
-      <div class="settings-section">
-        <h3 class="section-title">النظام</h3>
-        <div class="settings-list">
-          <div class="setting-item disabled">
-            <div class="setting-icon gray">
-              <Bell :size="20" />
-            </div>
-            <div class="setting-content">
-              <span class="setting-label">الإشعارات</span>
-              <span class="setting-desc">إدارة التنبيهات</span>
-            </div>
+              <span>{{ manualBackupLoading ? 'جاري الحفظ...' : 'حفظ نسخة الآن' }}</span>
+            </button>
           </div>
 
-          <button @click="handleLogout" class="setting-item danger">
-            <div class="setting-icon red">
-              <LogOut :size="20" />
+          <div class="backups-header">
+            <span>آخر النسخ ({{ backups.length }})</span>
+            <button @click="loadBackups" class="refresh-btn">تحديث</button>
+          </div>
+
+          <div class="mini-backup-list">
+            <div v-if="backupsLoading" class="mini-loading">جاري المزامنة...</div>
+            <div v-else-if="backups.length === 0" class="mini-empty">لا يوجد سجل حالي</div>
+            <div 
+              v-for="backup in backups.slice(0, 4)" 
+              :key="backup._id" 
+              class="mini-backup-cell"
+              @click="downloadBackup(backup)"
+            >
+              <div class="backup-orb"><FileJson :size="16" /></div>
+              <div class="backup-text">
+                <span class="name">{{ backup.filename }}</span>
+                <span class="date">{{ formatDate(backup.createdAt) }}</span>
+              </div>
+              <div class="count-tag">{{ backup.productCount }}</div>
             </div>
-            <div class="setting-content">
-              <span class="setting-label">تسجيل الخروج</span>
-              <span class="setting-desc">الخروج من الحساب</span>
-            </div>
-            <ChevronLeft :size="20" class="chevron" />
-          </button>
-        </div>
+          </div>
+        </section>
       </div>
     </div>
 
-    <!-- Edit Profile Dialog -->
-    <div v-if="showEditDialog" class="dialog-overlay" @click="showEditDialog = false">
-      <div class="dialog-content" @click.stop>
-        <h3>تعديل المعلومات</h3>
-        <div class="dialog-form">
-          <div class="form-group">
-            <label>الاسم الكامل</label>
-            <input v-model="editForm.name" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label>اسم المستخدم</label>
-            <input v-model="editForm.username" class="form-control" />
-          </div>
-        </div>
-        <div class="dialog-actions">
-          <button @click="saveProfile" class="btn-primary" :disabled="saveLoading">
-            {{ saveLoading ? 'جاري الحفظ...' : 'حفظ' }}
-          </button>
-          <button @click="showEditDialog = false" class="btn-secondary">إلغاء</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Password Dialog -->
-    <div v-if="showPasswordDialog" class="dialog-overlay" @click="showPasswordDialog = false">
-      <div class="dialog-content" @click.stop>
-        <h3>تغيير كلمة المرور</h3>
-        <div class="dialog-form">
-          <div class="form-group">
-            <label>كلمة المرور الحالية</label>
-            <input v-model="passwordForm.current" type="password" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label>كلمة المرور الجديدة</label>
-            <input v-model="passwordForm.new" type="password" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label>تأكيد كلمة المرور</label>
-            <input v-model="passwordForm.confirm" type="password" class="form-control" />
-          </div>
-        </div>
-        <div class="dialog-actions">
-          <button @click="changePassword" class="btn-primary" :disabled="saveLoading">
-            {{ saveLoading ? 'جاري التغيير...' : 'تغيير' }}
-          </button>
-          <button @click="showPasswordDialog = false; passwordForm = { current: '', new: '', confirm: '' }" class="btn-secondary">إلغاء</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Backup History Dialog -->
-    <div v-if="showBackupDialog" class="dialog-overlay" @click="showBackupDialog = false">
-      <div class="dialog-content large" @click.stop>
-        <h3>سجل النسخ الاحتياطي</h3>
-        
-        <div v-if="backupsLoading" class="loading-state">جاري التحميل...</div>
-        
-        <div v-else-if="backups.length === 0" class="empty-state">
-          <FileJson :size="48" :stroke-width="1" />
-          <p>لا توجد نسخ احتياطية</p>
-        </div>
-
-        <div v-else class="backup-list">
-          <div 
-            v-for="backup in backups" 
-            :key="backup._id" 
-            class="backup-item"
-            @click="downloadBackup(backup)"
-          >
-            <div class="backup-icon">
-              <FileJson :size="22" />
+    <!-- Edit Profile Dialogs -->
+    <Teleport to="body">
+      <transition name="dialog-fade">
+        <div v-if="showEditDialog" class="dialog-overlay" @click="showEditDialog = false">
+          <div class="dialog-glass" @click.stop>
+            <div class="dialog-header">
+              <h3>تعديل المعلومات</h3>
+              <button @click="showEditDialog = false" class="close-btn"><X :size="20" /></button>
             </div>
-            <div class="backup-info">
-              <span class="backup-name">{{ backup.filename }}</span>
-              <span class="backup-meta">
-                <Calendar :size="12" />
-                {{ formatDate(backup.createdAt) }} • {{ backup.productCount }} قطعة
-              </span>
+            <div class="dialog-body">
+              <div class="input-orb">
+                <label>الاسم الكامل</label>
+                <input v-model="editForm.name" />
+              </div>
+              <div class="input-orb">
+                <label>اسم المستخدم</label>
+                <input v-model="editForm.username" />
+              </div>
             </div>
-            <ChevronLeft :size="18" />
+            <div class="dialog-footer">
+              <button @click="saveProfile" class="btn-save" :disabled="saveLoading">
+                {{ saveLoading ? 'جاري الحفظ...' : 'حفظ التغييرات' }}
+              </button>
+            </div>
           </div>
         </div>
+      </transition>
 
-        <div class="dialog-actions">
-          <button @click="showBackupDialog = false" class="btn-secondary full">إغلاق</button>
+      <transition name="dialog-fade">
+        <div v-if="showPasswordDialog" class="dialog-overlay" @click="showPasswordDialog = false">
+          <div class="dialog-glass" @click.stop>
+            <div class="dialog-header">
+              <h3>تغيير كلمة المرور</h3>
+              <button @click="showPasswordDialog = false" class="close-btn"><X :size="20" /></button>
+            </div>
+            <div class="dialog-body">
+              <div class="input-orb">
+                <label>كلمة المرور الحالية</label>
+                <input v-model="passwordForm.current" type="password" />
+              </div>
+              <div class="input-orb">
+                <label>كلمة المرور الجديدة</label>
+                <input v-model="passwordForm.new" type="password" />
+              </div>
+              <div class="input-orb">
+                <label>تأكيد كلمة المرور</label>
+                <input v-model="passwordForm.confirm" type="password" />
+              </div>
+            </div>
+            <div class="dialog-footer">
+              <button @click="changePassword" class="btn-save" :disabled="saveLoading">
+                تحديث كلمة المرور
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
 <style scoped>
-.profile-android {
-  max-width: 600px;
+.profile-dashboard {
+  max-width: 1400px;
   margin: 0 auto;
-  padding-bottom: 100px;
+  padding: 40px;
+  padding-bottom: 120px;
 }
 
-/* Header Card */
-.profile-header-card {
-  background: linear-gradient(135deg, var(--system-blue), var(--system-green));
-  padding: 32px 24px;
-  border-radius: 0 0 24px 24px;
+/* Glassmorphism */
+.glass {
+  background: rgba(28, 28, 30, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+}
+
+/* Header Section */
+.main-header {
+  padding: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.user-profile-hero {
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.avatar-circle {
-  width: 72px;
-  height: 72px;
-  background: rgba(255,255,255,0.2);
-  backdrop-filter: blur(10px);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  font-weight: 800;
-  color: white;
-  border: 3px solid rgba(255,255,255,0.3);
-  flex-shrink: 0;
-}
-
-.user-details {
-  flex: 1;
-  color: white;
-}
-
-.user-details h2 {
-  font-size: 22px;
-  font-weight: 800;
-  margin: 0 0 4px;
-}
-
-.user-details p {
-  font-size: 14px;
-  margin: 0 0 10px;
-  opacity: 0.9;
-}
-
-.role-chip {
-  display: inline-block;
-  background: rgba(255,255,255,0.25);
-  backdrop-filter: blur(10px);
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-/* Alert Banner */
-.alert-banner {
-  margin: 16px 16px 0;
-  padding: 14px 16px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.alert-banner.success {
-  background: rgba(48, 209, 88, 0.15);
-  color: var(--system-green);
-}
-
-.alert-banner.error {
-  background: rgba(255, 69, 58, 0.15);
-  color: var(--system-red);
-}
-
-/* Settings Container */
-.settings-container {
-  padding: 0 16px;
-  display: flex;
-  flex-direction: column;
   gap: 24px;
 }
 
-.settings-section {
+.avatar-large {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, var(--system-blue), #5ac8fa);
+  border-radius: 30px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: 900;
+  color: #fff;
+  position: relative;
+  box-shadow: 0 12px 30px rgba(10, 132, 255, 0.3);
 }
 
-.section-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 0 4px;
+.status-indicator {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 24px;
+  height: 24px;
+  background: var(--system-green);
+  border: 4px solid var(--system-secondary-bg);
+  border-radius: 50%;
+}
+
+.hero-text h1 {
+  font-size: 32px;
   margin: 0;
+  font-weight: 800;
+  color: #fff;
 }
 
-.settings-list {
-  background: var(--system-secondary-bg);
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-
-.setting-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  width: 100%;
-  cursor: pointer;
-  transition: background 0.2s;
-  text-align: right;
-}
-
-.setting-item:last-child {
-  border-bottom: none;
-}
-
-.setting-item:not(.disabled):active {
-  background: var(--system-tertiary-bg);
-}
-
-.setting-item.disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-
-.setting-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.setting-icon.blue { background: rgba(10, 132, 255, 0.15); color: var(--system-blue); }
-.setting-icon.orange { background: rgba(255, 159, 10, 0.15); color: var(--system-orange); }
-.setting-icon.purple { background: rgba(191, 90, 242, 0.15); color: #bf5af2; }
-.setting-icon.green { background: rgba(48, 209, 88, 0.15); color: var(--system-green); }
-.setting-icon.teal { background: rgba(100, 210, 255, 0.15); color: #64d2ff; }
-.setting-icon.gray { background: rgba(142, 142, 147, 0.15); color: var(--system-gray); }
-.setting-icon.red { background: rgba(255, 69, 58, 0.15); color: var(--system-red); }
-
-.setting-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.setting-label {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.setting-desc {
-  font-size: 13px;
+.hero-text p {
+  margin: 4px 0 0;
   color: var(--text-secondary);
+  font-size: 16px;
 }
 
-.chevron {
-  color: var(--system-gray);
-  flex-shrink: 0;
-}
-
-/* Dialogs */
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
+.header-actions {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.dialog-content {
-  background: var(--system-secondary-bg);
-  border-radius: 20px;
-  padding: 24px;
-  width: 100%;
-  max-width: 400px;
-  border: 1px solid var(--border);
-  animation: slideUp 0.3s ease;
-}
-
-.dialog-content.large {
-  max-width: 500px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.dialog-content h3 {
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0 0 20px;
-}
-
-.dialog-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-group label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.form-control {
-  background: var(--system-tertiary-bg);
-  border: 1px solid var(--border);
-  padding: 12px 14px;
-  border-radius: 12px;
-  color: white;
-  font-size: 15px;
-  outline: none;
-}
-
-.form-control:focus {
-  border-color: var(--system-blue);
-}
-
-.dialog-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-primary,
-.btn-secondary {
-  flex: 1;
-  height: 48px;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.btn-primary {
-  background: var(--system-blue);
-  color: white;
-}
-
-.btn-secondary {
-  background: var(--system-tertiary-bg);
-  color: var(--text-primary);
-}
-
-.btn-secondary.full {
-  flex: none;
-  width: 100%;
-}
-
-/* Backup List */
-.loading-state,
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text-secondary);
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 12px;
 }
 
-.backup-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.backup-item {
+.btn-icon-labeled {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px;
-  background: var(--system-tertiary-bg);
-  border-radius: 12px;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  color: #fff;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.backup-item:active {
-  transform: scale(0.98);
+.btn-icon-labeled:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
 }
 
-.backup-icon {
+.btn-icon-labeled.logout {
+  color: var(--system-red);
+  background: rgba(255, 69, 58, 0.1);
+  border-color: rgba(255, 69, 58, 0.2);
+}
+
+.btn-icon-labeled.logout:hover {
+  background: var(--system-red);
+  color: #fff;
+}
+
+/* Grid Layout */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.settings-card {
+  padding: 32px;
+  height: 100%;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 32px;
+  color: #fff;
+}
+
+.settings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.setting-row, .action-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  border: 1px solid transparent;
+}
+
+.action-row {
+  cursor: pointer;
+  border-color: rgba(255, 255, 255, 0.05);
+  transition: all 0.2s;
+}
+
+.action-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--system-blue);
+  transform: scale(1.01);
+}
+
+.icon-orb {
   width: 44px;
   height: 44px;
-  background: rgba(48, 209, 88, 0.15);
-  color: var(--system-green);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
-.backup-info {
+.icon-orb.blue { background: rgba(10, 132, 255, 0.15); color: var(--system-blue); }
+.icon-orb.purple { background: rgba(191, 90, 242, 0.15); color: #bf5af2; }
+.icon-orb.orange { background: rgba(255, 159, 10, 0.15); color: var(--system-orange); }
+.icon-orb.teal { background: rgba(100, 210, 255, 0.15); color: #64d2ff; }
+
+.setting-text {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-width: 0;
 }
 
-.backup-name {
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.setting-text .label { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; }
+.setting-text .value { font-size: 16px; font-weight: 700; color: #fff; }
+
+/* Backup Section */
+.backup-cta {
+  background: linear-gradient(135deg, rgba(10, 132, 255, 0.1), rgba(48, 209, 88, 0.1));
+  padding: 24px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.backup-meta {
-  font-size: 12px;
-  color: var(--text-secondary);
+.cta-content h3 { font-size: 18px; margin: 0; color: #fff; }
+.cta-content p { font-size: 14px; color: var(--text-secondary); margin: 8px 0 0; }
+
+.cta-btn {
+  height: 52px;
+  background: var(--system-blue);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-weight: 800;
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cta-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(10, 132, 255, 0.3);
+}
+
+/* Mini Backup List */
+.backups-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.backups-header span { font-size: 14px; font-weight: 700; color: var(--text-secondary); }
+.refresh-btn { background: none; border: none; color: var(--system-blue); cursor: pointer; font-size: 13px; font-weight: 700; }
+
+.mini-backup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mini-backup-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mini-backup-cell:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.backup-orb {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--system-green);
+}
+
+.backup-text { flex: 1; display: flex; flex-direction: column; }
+.backup-text .name { font-size: 14px; font-weight: 700; }
+.backup-text .date { font-size: 11px; color: var(--text-secondary); }
+.count-tag { background: rgba(48, 209, 88, 0.2); color: var(--system-green); padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 800; }
+
+/* Dialog Styles */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 24px;
+}
+
+.dialog-glass {
+  width: 100%;
+  max-width: 500px;
+  background: rgba(28, 28, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 32px;
+  padding: 32px;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+}
+
+.dialog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.dialog-header h3 { font-size: 22px; font-weight: 800; margin: 0; color: #fff; }
+.close-btn { background: rgba(255, 255, 255, 0.05); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; }
+
+.dialog-body { display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px; }
+.input-orb { display: flex; flex-direction: column; gap: 8px; }
+.input-orb label { font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-right: 4px; }
+.input-orb input { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 14px 18px; border-radius: 14px; color: #fff; font-size: 16px; }
+.input-orb input:focus { outline: none; border-color: var(--system-blue); }
+
+.btn-save { width: 100%; height: 52px; background: var(--system-blue); color: #fff; border: none; border-radius: 16px; font-weight: 800; font-size: 16px; cursor: pointer; }
+
+/* Mobile Transitions & Media */
+.dialog-fade-enter-active, .dialog-fade-leave-active { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.dialog-fade-enter-from, .dialog-fade-leave-to { opacity: 0; transform: scale(0.95); }
+
+@media (max-width: 1000px) {
+  .profile-grid { grid-template-columns: 1fr; }
+  .main-header { flex-direction: column; text-align: center; gap: 24px; padding: 32px; }
+  .user-profile-hero { flex-direction: column; }
+}
+
+@media (max-width: 600px) {
+  .profile-dashboard { padding: 16px; }
+  .main-header { padding: 24px; }
+  .hero-text h1 { font-size: 24px; }
 }
 </style>

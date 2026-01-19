@@ -18,7 +18,9 @@ import {
   Key,
   Shield,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Box
 } from 'lucide-vue-next'
 
 import { convex } from '../lib/convex'
@@ -99,6 +101,11 @@ function formatDate(dateStr) {
   })
 }
 
+function getProgressWidth(count) {
+  if (!stats.value?.overview?.total_products) return '0%'
+  return (count / stats.value.overview.total_products * 100) + '%'
+}
+
 onMounted(() => {
   loadStats()
   loadBackups()
@@ -110,709 +117,604 @@ onMounted(() => {
     <!-- Header -->
     <header class="main-header">
       <div class="header-content">
-        <LayoutDashboard :size="32" class="header-icon" />
+        <div class="icon-box">
+          <LayoutDashboard :size="32" class="header-icon" />
+        </div>
         <div class="title-stack">
-          <h1>xCar - لوحة التحكم الشاملة</h1>
-          <p>الإحصائيات، الإعدادات، والنسخ الاحتياطي</p>
+          <h1>لوحة تحكم xCar</h1>
+          <p>أهلاً بك مجدداً، {{ auth.user?.name }}</p>
         </div>
       </div>
-      <div class="user-badge">
-        <User :size="18" />
-        <span>{{ auth.user?.name }}</span>
+      <div class="header-actions">
+        <div class="live-status">
+          <span class="pulse-dot"></span>
+          <span>النظام نشط</span>
+        </div>
+        <div class="user-badge-desktop">
+          <div class="avatar">{{ auth.user?.name?.[0] }}</div>
+          <div class="user-info">
+            <span class="user-name">{{ auth.user?.name }}</span>
+            <span class="user-role">{{ auth.user?.role === 'admin' ? 'مدير النظام' : 'موظف' }}</span>
+          </div>
+        </div>
       </div>
     </header>
 
     <!-- Alert Messages -->
-    <div v-if="message.text" :class="['alert-banner', message.type]">
-      <CheckCircle v-if="message.type === 'success'" :size="18" />
-      <AlertCircle v-else :size="18" />
-      <span>{{ message.text }}</span>
-    </div>
+    <transition name="fade">
+      <div v-if="message.text" :class="['alert-banner', message.type]">
+        <CheckCircle v-if="message.type === 'success'" :size="18" />
+        <AlertCircle v-else :size="18" />
+        <span>{{ message.text }}</span>
+      </div>
+    </transition>
 
     <div v-if="loading" class="loading-container">
        <div class="loader-spinner"></div>
-       <span>جاري التحميل...</span>
+       <span>جاري مزامنة البيانات...</span>
     </div>
     
-    <div v-else class="unified-content">
-      <!-- Section 1: Statistics Overview -->
-      <section class="content-section">
-        <h2 class="section-title">
-          <TrendingUp :size="22" />
-          <span>نظرة عامة على المخزون</span>
-        </h2>
+    <div v-else class="unified-grid">
+      <!-- Top Row: Stats (Full Width) -->
+      <section class="grid-span-full">
         <div class="stats-grid">
-          <div class="stat-card blue">
+          <div class="stat-card blue glass">
             <div class="stat-icon"><Package :size="28" /></div>
             <div class="stat-info">
-              <span class="stat-label">إجمالي القطع</span>
+              <span class="stat-label">أنواع القطع</span>
               <span class="stat-value">{{ stats?.overview.total_products }}</span>
             </div>
           </div>
 
-          <div class="stat-card green">
+          <div class="stat-card green glass">
             <div class="stat-icon"><TrendingUp :size="28" /></div>
             <div class="stat-info">
-              <span class="stat-label">القيمة المالية</span>
+              <span class="stat-label">القيمة الإجمالية</span>
               <span class="stat-value">{{ stats?.overview.total_value.toLocaleString() }} <small>IQD</small></span>
             </div>
           </div>
 
-          <div class="stat-card orange">
+          <div class="stat-card orange glass">
             <div class="stat-icon"><AlertTriangle :size="28" /></div>
             <div class="stat-info">
-              <span class="stat-label">أصناف نافذة</span>
+              <span class="stat-label">أصناف منتهية</span>
               <span class="stat-value">{{ stats?.overview.out_of_stock }}</span>
             </div>
           </div>
 
-          <div class="stat-card purple">
+          <div class="stat-card purple glass">
             <div class="stat-icon"><ShoppingBag :size="28" /></div>
             <div class="stat-info">
-              <span class="stat-label">الكمية الكلية</span>
+              <span class="stat-label">إجمالي الكمية</span>
               <span class="stat-value">{{ stats?.overview.total_items }}</span>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Section 2: Quick Actions -->
-      <section class="content-section">
-        <h2 class="section-title">
-          <Settings :size="22" />
-          <span>إجراءات سريعة</span>
-        </h2>
-        <div class="actions-grid">
-          <router-link to="/add" class="action-btn blue">
-            <ShoppingBag :size="22" />
-            <div class="action-text">
-              <span>إضافة منتج</span>
-              <small>تسجيل صنف جديد</small>
-            </div>
-            <ChevronLeft :size="18" />
-          </router-link>
+      <!-- Main Column: Actions and Distribution -->
+      <div class="main-column">
+        <!-- Quick Actions -->
+        <section class="content-section glass">
+          <h2 class="section-title">
+            <Settings :size="20" />
+            <span>الوصول السريع</span>
+          </h2>
+          <div class="actions-grid-desktop">
+            <router-link to="/add" class="desktop-action-card blue">
+              <div class="action-icon"><Plus :size="24" /></div>
+              <div class="action-content">
+                <h3>إضافة منتج</h3>
+                <p>تسجيل صنف جديد في النظام</p>
+              </div>
+            </router-link>
 
-          <router-link to="/inventory" class="action-btn green">
-            <Package :size="22" />
-            <div class="action-text">
-              <span>عرض المخزون</span>
-              <small>جميع الأصناف</small>
-            </div>
-            <ChevronLeft :size="18" />
-          </router-link>
+            <router-link to="/inventory" class="desktop-action-card green">
+              <div class="action-icon"><Box :size="24" /></div>
+              <div class="action-content">
+                <h3>المستودع</h3>
+                <p>إدارة وتعديل المخزون الحالي</p>
+              </div>
+            </router-link>
 
-          <router-link to="/profile" class="action-btn purple">
-            <User :size="22" />
-            <div class="action-text">
-              <span>الحساب الشخصي</span>
-              <small>الملف والإعدادات</small>
-            </div>
-            <ChevronLeft :size="18" />
-          </router-link>
-        </div>
-      </section>
+            <router-link to="/profile" class="desktop-action-card purple">
+              <div class="action-icon"><User :size="24" /></div>
+              <div class="action-content">
+                <h3>الإعدادات</h3>
+                <p>تخصيص ملفك الشخصي</p>
+              </div>
+            </router-link>
+          </div>
+        </section>
 
-      <!-- Section 3: Backup Management -->
-      <section class="content-section">
-        <h2 class="section-title">
-          <Database :size="22" />
-          <span>النسخ الاحتياطي</span>
-        </h2>
-        
-        <div class="backup-controls">
+        <!-- Distribution -->
+        <section class="content-section glass">
+          <h2 class="section-title">
+            <Database :size="20" />
+            <span>توزيع المخزون حسب النوع</span>
+          </h2>
+          <div class="car-distribution-grid">
+            <div v-for="(data, name) in stats?.by_car" :key="name" class="dist-card">
+              <div class="dist-header">
+                <span class="car-name">{{ name }}</span>
+                <span class="car-count">{{ data.count }} قطعة</span>
+              </div>
+              <div class="progress-bar-container">
+                <div 
+                  class="progress-fill" 
+                  :style="{ 
+                    width: getProgressWidth(data.count),
+                    boxShadow: '0 0 10px rgba(10, 132, 255, 0.3)'
+                  }"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Side Column: Alerts and Backups -->
+      <div class="side-column">
+        <!-- Alerts -->
+        <section class="content-section glass alerts-section">
+          <h2 class="section-title">
+            <Bell :size="20" />
+            <span>تنبيهات النظام</span>
+          </h2>
+          
+          <div v-if="stats?.low_stock.length > 0" class="mini-alerts-list">
+            <div v-for="item in stats.low_stock" :key="item.product_number" class="mini-alert-item">
+              <div class="alert-indicator"></div>
+              <div class="alert-content">
+                <span class="name">{{ item.product_name }}</span>
+                <span class="meta">بقي {{ item.quantity }} قطع فقط</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="no-alerts-desktop">
+            <CheckCircle :size="32" class="success-icon" />
+            <p>جميع الأصناف متوفرة بكثرة</p>
+          </div>
+        </section>
+
+        <!-- Backup -->
+        <section class="content-section glass backup-section">
+          <h2 class="section-title">
+            <CloudDownload :size="20" />
+            <span>النسخ الاحتياطي</span>
+          </h2>
+          
           <button 
             @click="triggerManualBackup" 
-            class="backup-btn"
+            class="backup-action-btn"
             :disabled="manualBackupLoading"
           >
-            <CloudDownload :size="22" />
-            <span>{{ manualBackupLoading ? 'جاري الحفظ...' : 'إنشاء نسخة احتياطية الآن' }}</span>
+            <Database :size="18" />
+            <span>{{ manualBackupLoading ? 'جاري الحفظ...' : 'حفظ نسخة الآن' }}</span>
           </button>
-        </div>
 
-        <div class="backups-container">
-          <h3>السجل ({{ backups.length }} نسخة)</h3>
-          
-          <div v-if="backupsLoading" class="loading-state">جاري التحميل...</div>
-          
-          <div v-else-if="backups.length === 0" class="empty-state">
-            <FileJson :size="48" :stroke-width="1" />
-            <p>لا توجد نسخ احتياطية بعد</p>
-          </div>
-
-          <div v-else class="backups-list">
-            <div 
-              v-for="backup in backups.slice(0, 5)" 
-              :key="backup._id" 
-              class="backup-item"
-              @click="downloadBackup(backup)"
-            >
-              <div class="backup-icon">
-                <FileJson :size="20" />
-              </div>
-              <div class="backup-info">
-                <span class="backup-name">{{ backup.filename }}</span>
-                <span class="backup-meta">
-                  <Calendar :size="12" />
-                  {{ formatDate(backup.createdAt) }}
-                </span>
-              </div>
-              <span class="backup-count">{{ backup.productCount }}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 4: Data Analysis -->
-      <section class="content-section">
-        <h2 class="section-title">
-          <Bell :size="22" />
-          <span>التحليلات والتنبيهات</span>
-        </h2>
-        
-        <div class="analysis-grid">
-          <!-- Car Distribution -->
-          <div class="analysis-card">
-            <h3>توزيع المخزون حسب السيارة</h3>
-            <div class="car-distribution">
-              <div v-for="(data, name) in stats?.by_car" :key="name" class="dist-item">
-                <span class="car-name">{{ name }}</span>
-                <div class="progress-bar">
-                  <div class="progress-fill" :style="{ width: (data.count / stats.overview.total_products * 100) + '%' }"></div>
+          <div class="recent-backups">
+            <div v-if="backupsLoading" class="mini-loading">جاري المزامنة...</div>
+            <div v-else class="backup-mini-list">
+              <div 
+                v-for="backup in backups.slice(0, 3)" 
+                :key="backup._id" 
+                class="mini-backup-item"
+                @click="downloadBackup(backup)"
+              >
+                <FileJson :size="16" />
+                <div class="backup-name-container">
+                  <span class="name">{{ backup.filename }}</span>
+                  <span class="date">{{ formatDate(backup.createdAt) }}</span>
                 </div>
-                <span class="car-count">{{ data.count }}</span>
+                <ChevronLeft :size="14" />
               </div>
             </div>
           </div>
-
-          <!-- Low Stock Alerts -->
-          <div class="analysis-card">
-            <h3>تنبيهات النواقص</h3>
-            <div v-if="stats?.low_stock.length > 0" class="alerts-list">
-              <div v-for="item in stats.low_stock" :key="item.product_number" class="alert-item">
-                <div class="alert-icon">
-                  <Bell :size="16" />
-                </div>
-                <div class="alert-info">
-                  <span class="alert-name">{{ item.product_name }}</span>
-                  <span class="alert-id">#{{ item.product_number }}</span>
-                </div>
-                <span class="alert-qty">{{ item.quantity }}</span>
-              </div>
-            </div>
-            <div v-else class="no-alerts">
-              <span class="success-icon">✅</span>
-              <p>جميع الأصناف متوفرة</p>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
 .dashboard-unified { 
-  padding-bottom: 100px;
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
+  padding: 20px 40px 100px;
 }
 
-/* Header */
+/* Glassmorphism Classes */
+.glass {
+  background: rgba(28, 28, 30, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+}
+
+/* Header Enhancements */
 .main-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding: 24px 0;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+  padding: 20px 0;
+}
+
+.icon-box {
+  width: 56px;
+  height: 56px;
+  background: rgba(10, 132, 255, 0.1);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(10, 132, 255, 0.2);
 }
 
 .header-content {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
 }
 
-.header-icon { 
-  color: var(--system-blue);
-  flex-shrink: 0;
-}
-
-.title-stack h1 { 
-  font-size: 26px; 
-  margin: 0; 
+.title-stack h1 {
+  font-size: 32px;
+  margin: 0;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--system-blue), var(--system-green));
+  background: linear-gradient(135deg, #fff, #8e8e93);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
-.title-stack p { 
-  margin: 4px 0 0; 
-  color: var(--text-secondary); 
-  font-size: 13px; 
+.title-stack p {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 15px;
 }
 
-.user-badge {
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.live-status {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--system-tertiary-bg);
-  padding: 8px 16px;
+  background: rgba(48, 209, 88, 0.1);
+  padding: 6px 14px;
   border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--system-blue);
-}
-
-/* Alert Banner */
-.alert-banner {
-  margin-bottom: 20px;
-  padding: 14px 18px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.alert-banner.success {
-  background: rgba(48, 209, 88, 0.15);
   color: var(--system-green);
-  border: 1px solid rgba(48, 209, 88, 0.3);
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.alert-banner.error {
-  background: rgba(255, 69, 58, 0.15);
-  color: var(--system-red);
-  border: 1px solid rgba(255, 69, 58, 0.3);
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--system-green);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--system-green);
+  animation: pulse 2s infinite;
 }
 
-.loading-container {
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.5; }
+  100% { transform: scale(0.95); opacity: 1; }
+}
+
+.user-badge-desktop {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 100px 20px;
-  gap: 16px;
-  color: var(--text-secondary);
+  gap: 12px;
+  padding: 6px 18px 6px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.loader-spinner {
+.avatar {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(10, 132, 255, 0.1);
-  border-top-color: var(--system-blue);
+  background: var(--system-blue);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
 }
 
-@keyframes spin { 
-  to { transform: rotate(360deg); } 
-}
-
-.unified-content {
+.user-info {
   display: flex;
   flex-direction: column;
-  gap: 40px;
 }
 
-/* Sections */
-.content-section {
-  display: flex;
-  flex-direction: column;
+.user-name { font-size: 14px; font-weight: 700; color: #fff; }
+.user-role { font-size: 11px; color: var(--text-secondary); }
+
+/* Unified Grid Layout */
+.unified-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+
+.grid-span-full {
+  grid-column: 1 / -1;
+  margin-bottom: 8px;
+}
+
+/* Stats Cards Styling */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+}
+
+.stat-card {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.blue .stat-icon { background: rgba(10, 132, 255, 0.15); color: var(--system-blue); }
+.green .stat-icon { background: rgba(48, 209, 88, 0.15); color: var(--system-green); }
+.orange .stat-icon { background: rgba(255, 159, 10, 0.15); color: var(--system-orange); }
+.purple .stat-icon { background: rgba(191, 90, 242, 0.15); color: #bf5af2; }
+
+.stat-value {
+  display: block;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  margin-top: 4px;
+}
+
+/* Content Sections */
+.main-column, .side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.content-section {
+  padding: 24px;
 }
 
 .section-title {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 20px;
-  font-weight: 800;
-  margin: 0;
-  color: var(--text-primary);
-  padding-bottom: 12px;
-  border-bottom: 2px solid var(--border);
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 24px;
+  color: #fff;
 }
 
-/* Stats Grid */
-.stats-grid {
+.section-title span { flex: 1; }
+
+/* Desktop Action Cards */
+.actions-grid-desktop {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
-.stat-card {
-  background: var(--system-secondary-bg);
-  padding: 24px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.blue .stat-icon { background: rgba(10, 132, 255, 0.1); color: var(--system-blue); }
-.green .stat-icon { background: rgba(48, 209, 88, 0.1); color: var(--system-green); }
-.orange .stat-icon { background: rgba(255, 159, 10, 0.1); color: var(--system-orange); }
-.purple .stat-icon { background: rgba(191, 90, 242, 0.1); color: #bf5af2; }
-
-.stat-info {
-  flex: 1;
+.desktop-action-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.stat-label { 
-  font-size: 13px; 
-  color: var(--text-secondary);
-  font-weight: 600;
-}
-
-.stat-value { 
-  font-size: 24px; 
-  font-weight: 800;
-}
-
-.stat-value small { 
-  font-size: 13px; 
-  opacity: 0.7;
-}
-
-/* Actions Grid */
-.actions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 12px;
-}
-
-.action-btn {
-  background: var(--system-secondary-bg);
-  border: 1px solid var(--border);
-  padding: 18px 20px;
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
   gap: 16px;
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.2s;
-}
-
-.action-btn:hover {
-  border-color: var(--system-blue);
-  transform: translateY(-2px);
-}
-
-.action-btn.blue { border-left: 4px solid var(--system-blue); }
-.action-btn.green { border-left: 4px solid var(--system-green); }
-.action-btn.purple { border-left: 4px solid #bf5af2; }
-
-.action-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.action-text span {
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.action-text small {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-/* Backup Section */
-.backup-controls {
-  display: flex;
-  gap: 12px;
-}
-
-.backup-btn {
-  flex: 1;
-  max-width: 400px;
-  height: 56px;
-  background: var(--system-blue);
-  color: white;
-  border: none;
-  border-radius: 16px;
-  font-size: 16px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.backup-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(10, 132, 255, 0.3);
-}
-
-.backup-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.backups-container {
-  background: var(--system-secondary-bg);
-  border: 1px solid var(--border);
   padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  text-decoration: none;
+  transition: all 0.3s;
 }
 
-.backups-container h3 {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 16px;
+.desktop-action-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
 }
 
-.loading-state,
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text-secondary);
+.desktop-action-card:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.12);
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
+.desktop-action-card.blue:hover { border-color: var(--system-blue); }
+.desktop-action-card.green:hover { border-color: var(--system-green); }
+.desktop-action-card.purple:hover { border-color: #bf5af2; }
 
-.backups-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.backup-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px;
-  background: var(--system-tertiary-bg);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.backup-item:hover {
-  background: rgba(10, 132, 255, 0.1);
-}
-
-.backup-icon {
+.action-icon {
   width: 44px;
   height: 44px;
-  background: rgba(48, 209, 88, 0.15);
-  color: var(--system-green);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
-.backup-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
+.blue .action-icon { background: var(--system-blue); color: #fff; }
+.green .action-icon { background: var(--system-green); color: #fff; }
+.purple .action-icon { background: #bf5af2; color: #fff; }
 
-.backup-name {
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.action-content h3 { font-size: 16px; margin: 0; color: #fff; }
+.action-content p { font-size: 12px; margin: 4px 0 0; color: var(--text-secondary); }
 
-.backup-meta {
-  font-size: 12px;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.backup-count {
-  background: var(--system-blue);
-  color: white;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 12px;
-}
-
-/* Analysis Grid */
-.analysis-grid {
+/* Distribution Cards */
+.car-distribution-grid {
   display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 20px;
-}
-
-.analysis-card {
-  background: var(--system-secondary-bg);
-  border: 1px solid var(--border);
-  padding: 24px;
-  border-radius: 20px;
-}
-
-.analysis-card h3 {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 20px;
-}
-
-.car-distribution {
-  display: flex;
-  flex-direction: column;
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
-.dist-item {
+.dist-card {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+}
+
+.dist-header {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
-.car-name {
-  font-size: 14px;
-  font-weight: 600;
-  width: 100px;
-  flex-shrink: 0;
-}
+.car-name { font-weight: 600; font-size: 14px; }
+.car-count { color: var(--system-blue); font-weight: 800; font-size: 14px; }
 
-.progress-bar {
-  flex: 1;
-  height: 8px;
-  background: var(--system-tertiary-bg);
-  border-radius: 4px;
+.progress-bar-container {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--system-blue), var(--system-green));
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
-.car-count {
-  font-size: 13px;
-  font-weight: 700;
-  min-width: 40px;
-  text-align: left;
-}
-
-.alerts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.alert-item {
+/* Alerts and Backup Area */
+.mini-alerts-list { display: grid; gap: 12px; }
+.mini-alert-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: var(--system-tertiary-bg);
-  border-radius: 12px;
+  background: rgba(255, 69, 58, 0.05);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 69, 58, 0.1);
 }
 
-.alert-icon {
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 69, 58, 0.1);
-  color: var(--system-red);
-  border-radius: 8px;
+.alert-indicator {
+  width: 8px;
+  height: 8px;
+  background: var(--system-red);
+  border-radius: 50%;
+}
+
+.alert-content { display: flex; flex-direction: column; }
+.alert-content .name { font-size: 13px; font-weight: 700; color: #fff; }
+.alert-content .meta { font-size: 11px; color: var(--system-red); opacity: 0.8; }
+
+.no-alerts-desktop {
+  text-align: center;
+  padding: 30px 10px;
+}
+
+.success-icon { color: var(--system-green); margin-bottom: 12px; }
+
+.backup-action-btn {
+  width: 100%;
+  height: 48px;
+  background: var(--system-blue);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.2s;
 }
 
-.alert-info {
-  flex: 1;
+.backup-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(10, 132, 255, 0.3);
+}
+
+.backup-action-btn:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
+.backup-mini-list { display: grid; gap: 8px; }
+.mini-backup-item {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.alert-name {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.alert-id {
-  font-size: 11px;
-  color: var(--system-gray);
-}
-
-.alert-qty {
-  background: var(--system-red);
-  color: white;
-  font-size: 12px;
-  font-weight: 800;
-  padding: 4px 10px;
-  border-radius: 10px;
-}
-
-.no-alerts {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 40px 20px;
   gap: 12px;
-  color: var(--system-green);
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
-.success-icon {
-  font-size: 48px;
-}
+.mini-backup-item:hover { background: rgba(255, 255, 255, 0.08); }
+.mini-backup-item:active { background: rgba(255, 255, 255, 0.15); transform: scale(0.98); }
+.backup-name-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.backup-name-container .name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.backup-name-container .date { font-size: 10px; color: var(--text-secondary); }
 
-@media (max-width: 900px) {
-  .analysis-grid {
+/* Mobile Adaptations */
+@media (max-width: 1100px) {
+  .unified-grid {
     grid-template-columns: 1fr;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .main-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
+  .dashboard-unified { padding: 16px 16px 120px; }
+  .main-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .header-actions { width: 100%; justify-content: space-between; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .actions-grid-desktop { grid-template-columns: 1fr; }
+  .car-distribution-grid { grid-template-columns: 1fr; }
+  .title-stack h1 { font-size: 24px; }
 }
 
-@media (max-width: 480px) {
-  .stats-grid,
-  .actions-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .title-stack h1 {
-    font-size: 22px;
-  }
+/* Loading Animation */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100px 0;
+  gap: 20px;
+  color: var(--text-secondary);
 }
+
+.loader-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(10, 132, 255, 0.1);
+  border-top-color: var(--system-blue);
+  border-radius: 50%;
+  animation: spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Alert Banner Fade */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
