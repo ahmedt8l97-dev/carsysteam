@@ -714,7 +714,7 @@ async def get_image(image_id: str):
     
     raise HTTPException(status_code=404, detail="الصورة غير موجودة")
 
-@app.post("/api/update-status/{product_number}")
+@app.post("/api/update-status/{product_number:path}")
 async def update_product_status(
     product_number: str, 
     action: str = Query(...)
@@ -750,7 +750,7 @@ async def update_product_status(
             
     return product
 
-@app.patch("/api/products/{product_number}")
+@app.patch("/api/products/{product_number:path}")
 async def update_product(
     product_number: str,
     product_name: str = Form(None),
@@ -858,7 +858,7 @@ async def update_settings(
 
 
 
-@app.delete("/api/products/{product_number}")
+@app.delete("/api/products/{product_number:path}")
 async def delete_product(
     product_number: str
 ):
