@@ -119,12 +119,12 @@ async function submit() {
 
         <div class="form-group">
           <label>السعر (IQD)</label>
-          <input type="text" v-model="form.price_iqd" required placeholder="السعر" pattern="[0-9]*" inputmode="numeric">
+          <input type="text" v-model="form.price_iqd" required placeholder="السعر">
         </div>
 
         <div class="form-group">
           <label>سعر الجملة (IQD)</label>
-          <input type="text" v-model="form.wholesale_price_iqd" required placeholder="سعر الجملة" pattern="[0-9]*" inputmode="numeric">
+          <input type="text" v-model="form.wholesale_price_iqd" required placeholder="سعر الجملة">
         </div>
       </div>
 

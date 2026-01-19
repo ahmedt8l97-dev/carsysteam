@@ -26,6 +26,20 @@ const editForm = ref({
   wholesale_price_iqd: 0
 })
 
+const showImageModal = ref(false)
+const selectedImage = ref('')
+
+function openImage(url) {
+  if (!url) return
+  selectedImage.value = url
+  showImageModal.value = true
+}
+
+function closeImage() {
+  showImageModal.value = false
+  selectedImage.value = ''
+}
+
 async function load() {
   loading.value = true
   try {
@@ -162,7 +176,7 @@ onMounted(load)
 
     <div v-else class="full-info-grid">
       <div v-for="p in products" :key="p._id" class="info-card card" :class="{ 'editing-mode': editingId === p._id }">
-        <div class="card-image">
+        <div class="card-image" @click="p.imageUrl && openImage(p.imageUrl)">
           <img v-if="p.imageUrl" :src="p.imageUrl" :alt="p.product_name">
           <div v-else class="no-image">
              <ImageIcon :size="48" :stroke-width="1" />
@@ -246,13 +260,13 @@ onMounted(load)
                 </div>
                 <div class="edit-field-group">
                   <label class="edit-label">سعر البيع</label>
-                  <input v-model="editForm.price_iqd" type="text" class="edit-input" placeholder="بيع" pattern="[0-9]*" inputmode="numeric">
+                  <input v-model="editForm.price_iqd" type="text" class="edit-input" placeholder="بيع">
                 </div>
               </div>
               
               <div class="edit-field-group">
                 <label class="edit-label">سعر الجملة</label>
-                <input v-model="editForm.wholesale_price_iqd" type="text" class="edit-input" placeholder="جملة" pattern="[0-9]*" inputmode="numeric">
+                <input v-model="editForm.wholesale_price_iqd" type="text" class="edit-input" placeholder="جملة">
               </div>
               
               <div class="edit-field-group">
@@ -270,6 +284,16 @@ onMounted(load)
           </template>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Image Modal -->
+  <div v-if="showImageModal" class="image-modal-overlay" @click="closeImage">
+    <div class="image-modal-content" @click.stop>
+      <img :src="selectedImage" alt="Full view">
+      <button class="close-modal-btn" @click="closeImage">
+        <X :size="24" />
+      </button>
     </div>
   </div>
 </template>
@@ -304,6 +328,12 @@ onMounted(load)
   width: 100%;
   height: 100%;
   object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.card-image img:active {
+  transform: scale(0.95);
 }
 
 .no-image {
@@ -478,4 +508,62 @@ onMounted(load)
 
 .spinning { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.image-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.2s ease;
+}
+
+.image-modal-content {
+  width: 350px;
+  height: 350px;
+  background: #1c1c1e;
+  border-radius: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.image-modal-content img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Keeps ratio but fits in square box as requested? Or cover? user said 'square' */
+  /* User said "open in a square shape". If the image is not square, cover might crop it. contain ensures it's fully visible. 
+     But let's assume they want the VIEWPORT to be square. */
+  object-fit: cover; 
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: rgba(0,0,0,0.5);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
 </style>
