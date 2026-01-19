@@ -162,7 +162,7 @@ onMounted(() => {
             <div class="stat-icon"><Package :size="28" /></div>
             <div class="stat-info">
               <span class="stat-label">أنواع القطع</span>
-              <span class="stat-value">{{ stats?.overview.total_products }}</span>
+              <span class="stat-value">{{ stats?.overview?.total_products || 0 }}</span>
             </div>
           </div>
 
@@ -170,7 +170,7 @@ onMounted(() => {
             <div class="stat-icon"><TrendingUp :size="28" /></div>
             <div class="stat-info">
               <span class="stat-label">القيمة الإجمالية</span>
-              <span class="stat-value">{{ stats?.overview.total_value.toLocaleString() }} <small>IQD</small></span>
+              <span class="stat-value">{{ (stats?.overview?.total_value || 0).toLocaleString() }} <small>IQD</small></span>
             </div>
           </div>
 
@@ -178,7 +178,7 @@ onMounted(() => {
             <div class="stat-icon"><AlertTriangle :size="28" /></div>
             <div class="stat-info">
               <span class="stat-label">أصناف منتهية</span>
-              <span class="stat-value">{{ stats?.overview.out_of_stock }}</span>
+              <span class="stat-value">{{ stats?.overview?.out_of_stock || 0 }}</span>
             </div>
           </div>
 
@@ -186,7 +186,7 @@ onMounted(() => {
             <div class="stat-icon"><ShoppingBag :size="28" /></div>
             <div class="stat-info">
               <span class="stat-label">إجمالي الكمية</span>
-              <span class="stat-value">{{ stats?.overview.total_items }}</span>
+              <span class="stat-value">{{ stats?.overview?.total_items || 0 }}</span>
             </div>
           </div>
         </div>
