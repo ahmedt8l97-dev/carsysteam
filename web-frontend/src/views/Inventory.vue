@@ -122,8 +122,8 @@ async function saveEdit() {
 
 async function updateStatus(productNumber, action) {
   try {
-    const res = await fetch(`/api/products/${encodeURIComponent(productNumber)}/status?action=${action}`, {
-      method: 'PATCH',
+    const res = await fetch(`/api/update-status/${encodeURIComponent(productNumber)}?action=${action}`, {
+      method: 'POST',
     })
     
     if (!res.ok) {
