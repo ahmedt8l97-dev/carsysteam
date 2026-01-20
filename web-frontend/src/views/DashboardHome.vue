@@ -37,7 +37,11 @@ const message = ref({ text: '', type: '' })
 async function loadStats() {
   loading.value = true
   try {
-    const res = await fetch('/api/stats')
+    const res = await fetch('/api/stats', {
+      headers: {
+        'Authorization': `Bearer ${auth.user?.token}`
+      }
+    })
     if (res.ok) {
       stats.value = await res.json()
     }
@@ -64,7 +68,12 @@ async function triggerManualBackup() {
   manualBackupLoading.value = true
   message.value = { text: '', type: '' }
   try {
-    const res = await fetch('/api/backup/manual', { method: 'POST' })
+    const res = await fetch('/api/backup/manual', { 
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${auth.user?.token}`
+      }
+    })
     const data = await res.json()
     
     if (res.ok) {
@@ -364,6 +373,7 @@ onMounted(() => {
   margin: 0;
   font-weight: 800;
   background: linear-gradient(135deg, #fff, #8e8e93);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

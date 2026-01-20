@@ -3,7 +3,9 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Save, ImagePlus, X } from 'lucide-vue-next'
 import { resizeImage } from '../lib/image-utils'
+import { useAuthStore } from '../stores/auth'
 
+const auth = useAuthStore()
 const router = useRouter()
 const form = ref({
   product_number: '',
@@ -68,6 +70,9 @@ async function submit() {
     
     const res = await fetch('/api/products', {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${auth.user?.token}`
+      },
       body: formData
     })
     
