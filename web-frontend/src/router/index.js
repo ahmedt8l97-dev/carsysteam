@@ -6,7 +6,6 @@ import DashboardHome from '../views/DashboardHome.vue'
 import Inventory from '../views/Inventory.vue'
 import AddProduct from '../views/AddProduct.vue'
 import Backup from '../views/Backup.vue'
-import Profile from '../views/Profile.vue'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -21,8 +20,7 @@ const router = createRouter({
                 { path: 'dashboard', component: DashboardHome },
                 { path: 'inventory', component: Inventory },
                 { path: 'add', component: AddProduct },
-                { path: 'backup', component: Backup },
-                { path: 'profile', component: Profile }
+                { path: 'backup', component: Backup }
             ]
         }
     ]

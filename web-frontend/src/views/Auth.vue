@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 import { convex } from '../lib/convex'
@@ -12,7 +12,6 @@ const router = useRouter()
 const isLogin = ref(true)
 const loading = ref(false)
 const error = ref('')
-const rememberMe = ref(false)
 
 const loginData = ref({ username: '', password: '' })
 const signupData = ref({ 
@@ -24,35 +23,11 @@ const signupData = ref({
 })
 const fileInput = ref(null)
 
-// Load saved credentials on mount
-onMounted(() => {
-  const savedCreds = localStorage.getItem('saved_login')
-  if (savedCreds) {
-    try {
-      const parsed = JSON.parse(savedCreds)
-      loginData.value.username = parsed.username
-      loginData.value.password = parsed.password
-      rememberMe.value = true
-    } catch (e) {}
-  }
-})
-
 async function handleLogin() {
   loading.value = true
   error.value = ''
   try {
     await auth.login(loginData.value.username, loginData.value.password)
-    
-    // Save credentials if "Remember Me" is checked
-    if (rememberMe.value) {
-      localStorage.setItem('saved_login', JSON.stringify({
-        username: loginData.value.username,
-        password: loginData.value.password
-      }))
-    } else {
-      localStorage.removeItem('saved_login')
-    }
-    
     router.push('/')
   } catch (e) {
     error.value = 'اسم المستخدم أو كلمة المرور غير صحيحة'
@@ -83,9 +58,8 @@ async function handleSignup() {
        photoUrl = storageId
     }
 
-    const { password, photo, ...otherData } = signupData.value;
     await convex.mutation(api.users.createUser, {
-      ...otherData,
+      ...signupData.value,
       passwordHash,
       role: 'employee',
       photo: photoUrl
@@ -128,16 +102,10 @@ async function handleSignup() {
              <Lock class="input-icon" :size="18" />
              <input v-model="loginData.password" type="password" placeholder="Password" required>
           </div>
-         </div>
-         <div class="remember-me-row">
-           <label class="checkbox-label">
-             <input type="checkbox" v-model="rememberMe">
-             <span>تذكرني في المرة القادمة</span>
-           </label>
-         </div>
-         <button class="btn-primary full-width" :disabled="loading">
-           {{ loading ? 'جاري التحميل...' : 'دخول' }}
-         </button>
+        </div>
+        <button class="btn-primary full-width" :disabled="loading">
+          {{ loading ? 'جاري التحميل...' : 'دخول' }}
+        </button>
       </form>
 
       <form v-else @submit.prevent="handleSignup" class="form-body">
@@ -235,29 +203,6 @@ async function handleSignup() {
 }
 
 .full-width { width: 100%; height: 50px; margin-top: 10px; }
-
-.remember-me-row {
-  display: flex;
-  align-items: center;
-  margin-top: 8px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--system-blue);
-}
-
 .auth-footer { margin-top: 24px; text-align: center; }
 .toggle-btn { background: none; border: none; color: var(--system-blue); font-size: 14px; cursor: pointer; }
 .hidden { display: none; }

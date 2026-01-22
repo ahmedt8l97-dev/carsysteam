@@ -115,18 +115,6 @@ input:focus {
   outline: 2px solid var(--system-blue);
 }
 
-/* إخفاء الشريط في حقول الأرقام */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-input[type="number"] {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-
 /* Grid for Inventory */
 .ios-grid {
   display: grid;

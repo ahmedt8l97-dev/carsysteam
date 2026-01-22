@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Car Stock Management System
 
 A comprehensive hybrid cloud-based inventory management system for automotive parts and accessories, featuring real-time synchronization with Telegram and cloud storage.
@@ -398,3 +399,7 @@ For support, please:
 ---
 
 **Made with ❤️ for automotive parts management**
+=======
+# car-stock-system
+
+>>>>>>> c5ff555 (Initial commit)

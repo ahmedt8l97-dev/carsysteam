@@ -26,7 +26,7 @@ if errorlevel 1 (
     echo 2. أنشئ قناة خاصة
     echo 3. أضف البوت كـ Admin
     echo 4. احصل على Chat ID
-    echo 5. حدّث ملف backend/.env
+    echo 5. حدّث ملف .env
     echo.
     pause
 )

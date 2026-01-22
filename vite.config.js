@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { defineConfig } from 'vite';
 
 export default defineConfig({
@@ -16,3 +17,23 @@ export default defineConfig({
         emptyOutDir: true,
     }
 });
+=======
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+    root: 'web-frontend',
+    server: {
+        port: 3000,
+        proxy: {
+            '/api': 'http://localhost:8000', // Backward compat if needed
+        },
+        fs: {
+            allow: ['..']
+        }
+    },
+    build: {
+        outDir: '../dist',
+        emptyOutDir: true,
+    }
+});
+>>>>>>> c5ff555 (Initial commit)

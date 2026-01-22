@@ -80,6 +80,7 @@ export const updateProduct = mutation({
     args: {
         id: v.id("products"),
         updates: v.object({
+            product_number: v.optional(v.string()),
             product_name: v.optional(v.string()),
             car_name: v.optional(v.string()),
             model_number: v.optional(v.string()),
@@ -91,6 +92,7 @@ export const updateProduct = mutation({
             message_id: v.optional(v.number()),
             status: v.optional(v.string()),
             last_update: v.optional(v.string()),
+            original_quantity: v.optional(v.number()),
         })
     },
     handler: async (ctx, args) => {
